@@ -1,7 +1,7 @@
 calculate_distances <- function(all_markets, data, id, i, warping_limit){
     row <- 1
     ThisMarket <- all_markets[i]
-    distances <- data.frame(matrix(nrow=length(all_markets), ncol=4))
+    distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
     names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length")
     messages <- 0
     for (j in 1:length(all_markets)){
