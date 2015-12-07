@@ -69,6 +69,7 @@ img {
 <li>Find <em>control</em> market(s) for the <em>test</em> market(s) where the event took place, using time series matching based on data prior to the event (pre period).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event.</li>
 </ol>
+<p>The most straight-forward approach to this would be to use a simple Euclidian distance for step 1, and then a “diff in diff” model for step 2. However, this assumes that markets are always aligned historically – an assumption that is easy to refute.</p>
 </div>
 <div id="about-marketmatching-package" class="section level1">
 <h1>About MarketMatching Package</h1>
