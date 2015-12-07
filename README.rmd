@@ -1,0 +1,61 @@
+---
+  output:
+  md_document:
+  variant: markdown_github
+---
+  
+# Market Matching and Causal Impact Inference
+If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we can not track the impact at the indidual customer level and hence we have to resort to analyzing the impact from a bird's eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA state, etc.).   
+
+An intervention analysis usually involves two steps:
+
+1. Find *control* market(s) for the *test* market(s) where the event took place, using time series matching based on data prior to the event (pre period).
+2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
+
+The most straight-forward approach to this would be to use a simple Euclidian distance for step 1, and then a "diff in diff" model for step 2. 
+
+# About MarketMatching Package
+
+The `MarketMatching` package is designed to perform the two key steps needed to do an intervention analysis:
+
+* For all markets in the input dataset, find the best control market using time series matching
+* Given a test market and a matching control market (from above), analyze the causal impact of an intervention
+
+# Simple Example
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
+library(MarketMatching)
+##-----------------------------------------------------------------------
+## Find best matches for each airport time series
+##-----------------------------------------------------------------------
+library(MarketMatching)
+data(weather, package="MarketMatching")
+mm <- best_matches(data=weather, id="Area", 
+                  date_variable="Date", 
+                  matching_variable="Mean_TemperatureF", 
+                  parallel=FALSE, 
+                  start_match_period="2014-01-01",
+                  end_match_period="2014-10-01")
+head(mm$Distances)
+subset(mm$Distances, Area=="CPH")
+ 
+##-----------------------------------------------------------------------
+## Analyze causal impact of a made-up weather intervention in Copenhagen
+## Since this is weather data this is a meaningless example and we should 
+## expect no causal impact. This is just to demo the function.
+##-----------------------------------------------------------------------
+results <- MarketMatching::inference(matched_markets = mm, test_market = "CPH", end_post_period = "2015-10-01")
+ 
+## Plot the impact
+results$PlotAbsoluteEffect
+ 
+## Plot actual observations for test market (CPH) versus the expectation (based on the control)
+results$PlotActualVersusFitted
+
+```
+
+# How to Install
+```{r, eval=FALSE}
+library(devtools)
+install_github("google/CausalImpact")
+install_github("klarsen1/MarketMatching", "klarsen1")
+```
