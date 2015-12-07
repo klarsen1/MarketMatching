@@ -177,7 +177,6 @@ best_matches <- function(data=NULL, id=NULL, date_variable=NULL, matching_variab
 
 #' @import CausalImpact
 #' @import scales
-#' @import Boom
 #' @import ggplot2
 #' @import zoo
 
@@ -268,9 +267,9 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
   names(plotdf) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
   results[[9]] <- ggplot(data=plotdf, aes(x=Date)) + 
-                  geom_line(aes(y=Predicted, colour = "Actuals (test market)")) + 
+                  geom_line(aes(y=Response, colour = "Actuals (test market)")) + 
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
-                  geom_line(aes(y=Response, colour = "Expected based on control")) + 
+                  geom_line(aes(y=Predicted, colour = "Expected based on control")) + 
                   theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
                   scale_colour_manual(breaks = c("Actuals (test market)", "Expected based on control"), values = c("black", "gray")) +
                   geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2)
