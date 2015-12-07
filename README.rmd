@@ -1,5 +1,5 @@
 # Market Matching and Causal Impact Inference
-If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we can not track the impact at the indidual customer level and hence we have to resort to analyzing the impact from a bird's eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA state, etc.).   
+If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we cannot track the impact at the indidual customer level and hence have to analyze the impact from a bird's eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA state, etc.).   
 
 An intervention analysis usually involves two steps:
 
