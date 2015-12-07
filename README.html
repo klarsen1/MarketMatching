@@ -69,7 +69,9 @@ img {
 <li>Find <em>control</em> market(s) for the <em>test</em> market(s) where the event took place, using time series matching based on data prior to the event (pre period).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event.</li>
 </ol>
-<p>The most straight-forward approach to this would be to use a simple Euclidian distance for step 1, and then a “diff in diff” model for step 2. However, this assumes that markets are always aligned historically – an assumption that is easy to refute.</p>
+<p>The most straight-forward approach to this would be to use a simple Euclidian distance for step 1, and then a “diff in diff” model for step 2. However, this assumes that markets are always aligned historically and that the difference between the test and control markets is constant. Although we prefer markets to be aligned, shifts can occur and we do not want to overpenalize occasional deviations. Moreover, the gap between the test and control markets can fluctuate and this should be factored into the uncertainty of the post period analysis.</p>
+<p>A better approach is to use <em>dynamic time warping</em> for the time series matching and a Bayesian structural time series model to do the post period inference. The dynamic time warping can be achieved with the <code>dtw</code> package (available on CRAN) and the post period analysis can be achieved with the <code>CausalImpact</code> analysis created by Kay Brodersen at Google. In factm the MarketMatching package can be considered a “wrapper” for combining these two packages</p>
+<p>In theory, we don’t need a test and a control market to do an intervention analysis – we can use a structural time series model derived from the test group to establish the the baseline for the post period. However, introducing a control market as an input into the expectation for the post period promotes transparancy in terms of where the expectation comes from and does a nice job of capturing seasonality when history is limited or a short pre period is desired.</p>
 </div>
 <div id="about-marketmatching-package" class="section level1">
 <h1>About MarketMatching Package</h1>
@@ -114,6 +116,11 @@ results$PlotActualVersusFitted</code></pre>
 <pre class="r"><code>library(devtools)
 install_github(&quot;google/CausalImpact&quot;)
 install_github(&quot;klarsen1/MarketMatching&quot;, &quot;klarsen1&quot;)</code></pre>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<p>CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). <a href="http://google.github.io/CausalImpact/" class="uri">http://google.github.io/CausalImpact/</a></p>
+<p>Vignette for the <code>dtw</code> package: <a href="https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf" class="uri">https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf</a>.</p>
 </div>
 
 

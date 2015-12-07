@@ -4,7 +4,7 @@ Title: Market matching and causal impact inference
 Version: 0.0.1
 Date: 2015-12-04
 Authors@R: person("Larsen", "Kim", email = "kblarsen4@gmail.com", role = c("aut", "cre"))
-Description: For a given test market find the best control market and analyze the impact of an intervention. The intervention could be be a marketing event or some other local business tactic that is being tested. The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. In fact, this package can be considered a wrapper for those two packages. 
+Description: For a given test market find the best control market using time series matching and analyze the impact of an intervention. The intervention could be be a marketing event or some other local business tactic that is being tested. The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. In fact, this package can be considered a wrapper for those two packages. 
 Depends: R (>= 3.1.2) 
 License: Apache License 2.0 | file LICENSE
 Imports: data.table, ggplot2, dplyr, utils, iterators, doParallel, parallel, foreach, bsts, CausalImpact
