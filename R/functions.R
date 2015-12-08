@@ -293,8 +293,8 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   
   ## create actual versus predicted plots
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
-  plotdf$test_market <- test_market
   names(plotdf) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
+  plotdf$test_market <- test_market
   results[[9]] <- ggplot(data=plotdf, aes(x=Date)) + 
                   geom_line(aes(y=Response, colour = test_market)) + 
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
