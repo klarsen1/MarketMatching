@@ -27,7 +27,7 @@ library(MarketMatching)
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather, id="Area", 
+mm <- best_matches(data=weather, id_variable="Area", 
                   date_variable="Date", 
                   matching_variable="Mean_TemperatureF", 
                   parallel=FALSE, 
@@ -40,9 +40,13 @@ subset(mm$Distances, Area=="CPH")
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
 ## Since this is weather data this is a meaningless example and we should 
 ## expect no causal impact. This is just to demo the function.
+## We're using a tight prior SD on the local level term.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
-results <- MarketMatching::inference(matched_markets = mm, test_market = "CPH", end_post_period = "2015-10-01")
+results <- MarketMatching::inference(matched_markets = mm, 
+                                    test_market = "CPH", 
+                                    end_post_period = "2015-10-01",
+                                    prior_level_sd = 0.002)
  
 ## Plot the impact
 results$PlotAbsoluteEffect

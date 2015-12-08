@@ -31,7 +31,7 @@ The MarketMatching has two separate functions to perform the tasks described abo
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather, id="Area",
+mm <- best_matches(data=weather, id_variable="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
                    parallel=FALSE,
@@ -46,7 +46,10 @@ subset(mm$Distances, Area=="CPH")
 ## expect no causal impact. This is just to demo the function.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
-results <- MarketMatching::inference(matched_markets = mm, test_market = "CPH", end_post_period = "2015-10-01")
+results <- MarketMatching::inference(matched_markets = mm,
+                                     test_market = "CPH",
+                                     end_post_period = "2015-10-01",
+                                     prior_level_sd = 0.002)
 
 ## Plot the impact
 results$PlotAbsoluteEffect

@@ -41,6 +41,9 @@ mm <- best_matches(data=weather, id="Area",
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 library(CausalImpact)
-results <- inference(matched_markets=mm, test_market="CPH", end_post_period="2015-12-15")
+results <- inference(matched_markets=mm,
+                     test_market="CPH",
+                     end_post_period="2015-12-15",
+                     prior_level_sd=0.002)
 }
 

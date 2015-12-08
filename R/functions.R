@@ -197,7 +197,10 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #'                    start_match_period="2014-01-01",
 #'                    end_match_period="2014-10-01")
 #' library(CausalImpact)
-#' results <- inference(matched_markets=mm, test_market="CPH", end_post_period="2015-12-15")
+#' results <- inference(matched_markets=mm, 
+#'                      test_market="CPH", 
+#'                      end_post_period="2015-12-15", 
+#'                      prior_level_sd=0.002)
 
 inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01){
 
@@ -290,13 +293,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   
   ## create actual versus predicted plots
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
+  plotdf$test_market <- test_market
   names(plotdf) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
   results[[9]] <- ggplot(data=plotdf, aes(x=Date)) + 
-                  geom_line(aes(y=Response, colour = "Actuals (test market)")) + 
+                  geom_line(aes(y=Response, colour = test_market)) + 
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
-                  geom_line(aes(y=Predicted, colour = "Expected based on control")) + 
+                  geom_line(aes(y=Predicted, colour = "Expected")) + 
                   theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
-                  scale_colour_manual(breaks = c("Actuals (test market)", "Expected based on control"), values = c("black", "gray")) +
+                  scale_colour_manual(breaks = c(test_market, "Expected"), values = c("black", "gray")) +
                   geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + 
                   scale_y_continuous(labels = comma, limits=c(ymin, ymax))
     
@@ -309,13 +313,15 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                    geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + 
                    geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
 
-  ## create actual versus predicted plots
+  ## create plots of the actual data
   plotdf <- cbind.data.frame(test, ref, date)
+  plotdf$test_market <- test_market
+  plotdf$control_market <- control_market
   results[[11]] <- ggplot(data=plotdf, aes(x=date)) + 
-    geom_line(aes(y=test, colour = "Test market")) + 
-    geom_line(aes(y=ref, colour = "Control market")) + 
+    geom_line(aes(y=test, colour = test_market)) + 
+    geom_line(aes(y=ref, colour = control_market)) + 
     theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
-    scale_colour_manual(breaks = c("Test market", "Control market"), values = c("gray", "black")) +
+    scale_colour_manual(breaks = c(test_market, control_market), values = c("gray", "black")) +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     scale_y_continuous(labels = comma, limits=c(ymin, ymax))
   
@@ -327,8 +333,9 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
 
   results[[13]] <- ggplot(data=betas, aes(x=SD, y=MAPE)) + 
     geom_line() + 
-    theme_bw() + theme(legend.title = element_blank()) 
-
+    theme_bw() + theme(legend.title = element_blank()) +
+    geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD")
+  
   ### print results
   cat("\t------------- Effect Analysis -------------\n")
   cat(paste0("\tAbsolute Effect: ", round(results[[1]],2), " [", round(results[[2]],2), ", ", round(results[[3]],2), "]\n"))
