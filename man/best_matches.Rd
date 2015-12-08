@@ -7,14 +7,14 @@
 The function returns an object of type "market_matching" using dynamic time warping (dtw package).
 The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.}
 \usage{
-best_matches(data = NULL, id = NULL, date_variable = NULL,
+best_matches(data = NULL, id_variable = NULL, date_variable = NULL,
   matching_variable = NULL, warping_limit = 2, parallel = TRUE,
   start_match_period = NULL, end_match_period = NULL)
 }
 \arguments{
 \item{data}{input data.frame for analysis}
 
-\item{id}{the name of the variable that identifies the markets}
+\item{id_variable}{the name of the variable that identifies the markets}
 
 \item{date_variable}{the time stamp variable}
 

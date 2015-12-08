@@ -7,7 +7,7 @@
 The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).}
 \usage{
 inference(matched_markets = NULL, test_market = NULL,
-  end_post_period = NULL, alpha = 0.05)
+  end_post_period = NULL, alpha = 0.05, prior_level_sd = 0.01)
 }
 \arguments{
 \item{matched_markets}{A matched_market object created by the market_matching function}
@@ -17,6 +17,9 @@ inference(matched_markets = NULL, test_market = NULL,
 \item{end_post_period}{The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"}
 
 \item{alpha}{Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals}
+
+\item{prior_level_sd}{Prior SD for the local level term. Default is 0.01. The biggesr this number is, the more wiggliness is allowed for the local level term.
+More wiggliness can diminish the role of the control market, which is not always desirable.}
 }
 \description{
 Given a test market, analyze the impact of an intervention
@@ -37,6 +40,7 @@ mm <- best_matches(data=weather, id="Area",
                    parallel=FALSE,
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
+library(CausalImpact)
 results <- inference(matched_markets=mm, test_market="CPH", end_post_period="2015-12-15")
 }
 

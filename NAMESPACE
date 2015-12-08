@@ -2,7 +2,6 @@
 
 export(best_matches)
 export(inference)
-import(CausalImpact)
 import(dplyr)
 import(dtw)
 import(foreach)

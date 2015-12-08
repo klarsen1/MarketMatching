@@ -45,6 +45,7 @@ subset(mm$Distances, Area=="CPH")
 ## Since this is weather data this is a meaningless example and we should
 ## expect no causal impact. This is just to demo the function.
 ##-----------------------------------------------------------------------
+library(CausalImpact)
 results <- MarketMatching::inference(matched_markets = mm, test_market = "CPH", end_post_period = "2015-10-01")
 
 ## Plot the impact
