@@ -1,3 +1,7 @@
+lagp <- function(x, p){  
+  return(c(rep(0,p), x[1:(length(x)-p)]))
+}
+
 calculate_distances <- function(all_markets, data, id, i, warping_limit){
     row <- 1
     ThisMarket <- all_markets[i]
@@ -70,6 +74,13 @@ mape_no_zeros <- function(test, ref){
   d <- cbind.data.frame(test, ref)
   d <- subset(d, abs(test)>0)
   return(mean(abs(lm(test ~ ref, data=d)$residuals)/d$test))
+}
+
+dw <- function(y, yhat){
+  res <- y - yhat
+  lagres <- lagp(res, 1)
+  r <- cor(res[2:length(res)], lagres[2:length(lagres)])
+  return(2*(1-r))
 }
 
 #' For each market, find the best matching control market
@@ -202,7 +213,7 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #'                      end_post_period="2015-12-15", 
 #'                      prior_level_sd=0.002)
 
-inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01){
+inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.001){
 
   ## copy the distances
   mm <- matched_markets$BestMatches
@@ -258,7 +269,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
 
   ## estimate betas for different values of prior sd
   betas <- data.frame(matrix(nrow=11, ncol=3))
-  names(betas) <- c("SD", "Beta", "MAPE")
+  names(betas) <- c("SD", "Beta", "DW")
   for (i in 0:10){
     sd <- 0.001 + i/1000
     m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=sd))
@@ -266,7 +277,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     betas[i+1, "SD"] <- sd
     betas[i+1, "Beta"] <- b
     preperiod <- subset(m$series, cum.effect == 0)
-    betas[i+1, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
+    betas[i+1, "DW"] <- dw(preperiod$response, preperiod$point.pred)
   }
   
   ## create statistics
@@ -281,11 +292,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
 
   ## compute mape
   preperiod <- subset(impact$series, cum.effect == 0)
+  preperiod$res <- preperiod$response - preperiod$point.pred
   results[[8]] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
+  results[[9]] <- dw(preperiod$response, preperiod$point.pred)
   
   cat("\t------------- Model Stats -------------\n")
   cat(paste0("\tMAPE: ", round(100*results[[8]], 2) , "%\n"))
   cat(paste0("\tBeta: ", round(colMeans(impact$model$bsts.model$coefficients)[2], 2) , "\n"))
+  cat(paste0("\tDW: ", round(results[[9]], 2) , "\n"))
   cat("\n")
   cat("\n")
   
@@ -293,10 +307,10 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(test))
   
   ## create actual versus predicted plots
-  plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
+  plotdf <- cbind.data.frame(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
   names(plotdf) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
   plotdf$test_market <- test_market
-  results[[9]] <- ggplot(data=plotdf, aes(x=Date)) + 
+  results[[10]] <- ggplot(data=plotdf, aes(x=Date)) + 
                   geom_line(aes(y=Response, colour = test_market)) + 
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
                   geom_line(aes(y=Predicted, colour = "Expected")) + 
@@ -309,7 +323,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   ## create lift plots
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("cum.effect", "cum.effect.lower", "cum.effect.upper")])
   names(plotdf) <- c("Date", "Cumulative", "lower_bound", "upper_bound")
-  results[[10]] <- ggplot(data=plotdf, aes(x=Date, y=Cumulative)) + geom_line() + theme_bw() + 
+  results[[11]] <- ggplot(data=plotdf, aes(x=Date, y=Cumulative)) + geom_line() + theme_bw() + 
                    scale_y_continuous(labels = comma) + ylab("Absolute Cumulative Effect") + xlab("") + 
                    geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + 
                    geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
@@ -318,7 +332,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   plotdf <- cbind.data.frame(test, ref, date)
   plotdf$test_market <- test_market
   plotdf$control_market <- control_market
-  results[[11]] <- ggplot(data=plotdf, aes(x=date)) + 
+  results[[12]] <- ggplot(data=plotdf, aes(x=date)) + 
     geom_line(aes(y=test, colour = test_market)) + 
     geom_line(aes(y=ref, colour = control_market)) + 
     theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
@@ -327,23 +341,31 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     scale_y_continuous(labels = comma, limits=c(ymin, ymax))
   
   ## plot betas at various local level SDs
-  results[[12]] <- ggplot(data=betas, aes(x=SD, y=Beta)) + 
+  results[[13]] <- ggplot(data=betas, aes(x=SD, y=Beta)) + 
     geom_line() + 
     theme_bw() + theme(legend.title = element_blank()) + 
     geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD")
 
-  results[[13]] <- ggplot(data=betas, aes(x=SD, y=MAPE)) + 
+  results[[14]] <- ggplot(data=betas, aes(x=SD, y=DW)) + 
     geom_line() + 
     theme_bw() + theme(legend.title = element_blank()) +
     geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD")
 
-  plotdf <- cbind.data.frame(date, impact$model$bsts.model$state.contributions[1000, 1, ])
+  plotdf <- cbind.data.frame(date, impact$model$bsts.model$state.contributions[1000, 1, ]) %>% filter(date<=as.Date(MatchingEndDate))
   names(plotdf) <- c("Date", "LocalLevel")
-  results[[14]] <- ggplot(data=plotdf, aes(x=Date, y=LocalLevel)) + 
+  results[[15]] <- ggplot(data=plotdf, aes(x=Date, y=LocalLevel)) + 
     geom_line() + 
     theme_bw() + theme(legend.title = element_blank()) +
-    geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + ylab("Local Level") + xlab("")
-    
+    ylab("Local Level") + xlab("")
+  
+  plotdf <- cbind.data.frame(date, data.frame(impact$series)[,c("response", "point.pred")]) %>% dplyr::filter(date<=as.Date(MatchingEndDate))
+  names(plotdf) <- c("Date", "y", "yhat")
+  plotdf$Residuals <- plotdf$y - plotdf$yhat
+  results[[16]] <- ggplot(data=plotdf, aes(x=Date, y=Residuals)) + 
+                               geom_line() + 
+                               theme_bw() + theme(legend.title = element_blank()) +
+                               xlab("")
+                             
   ### print results
   cat("\t------------- Effect Analysis -------------\n")
   cat(paste0("\tAbsolute Effect: ", round(results[[1]],2), " [", round(results[[2]],2), ", ", round(results[[3]],2), "]\n"))
@@ -353,9 +375,10 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   ### return the results
   object <- list(AbsoluteEffect=results[[1]], AbsoluteEffectLower=results[[2]], AbsoluteEffectUpper=results[[3]], 
                  RelativeEffect=results[[4]], RelativeEffectLower=results[[5]], RelativeEffectUpper=results[[6]], 
-                 TailProb=results[[7]], PrePeriodMAPE=results[[8]], PlotActualVersusExpected=results[[9]], PlotAbsoluteEffect=results[[10]],
-                 PlotActuals=results[[11]], PlotPriorLevelSDBetas=results[[12]], PlotPriorLevelSDMAPE=results[[13]], 
-                 PlotLocalLevel=results[[14]], TestData=test, ControlData=ref, 
+                 TailProb=results[[7]], PrePeriodMAPE=results[[8]], DW=results[[9]],
+                 PlotActualVersusExpected=results[[10]], PlotAbsoluteEffect=results[[11]],
+                 PlotActuals=results[[12]], PlotPriorLevelSdBetas=results[[13]], PlotPriorLevelSdDW=results[[14]], 
+                 PlotLocalLevel=results[[15]], TestData=test, ControlData=ref, PlotResiduals=results[[16]],
                  PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market)
   class(object) <- "matched_market_inference"
   return (object)
