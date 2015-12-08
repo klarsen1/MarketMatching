@@ -256,13 +256,13 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   betas <- data.frame(matrix(nrow=11, ncol=3))
   names(betas) <- c("SD", "Beta", "MAPE")
   for (i in 0:10){
-    sd <- 0.001 + i/100
+    sd <- 0.001 + i/1000
     m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=sd))
     b <- colMeans(m$model$bsts.model$coefficients)[2]
-    betas[i, "SD"] <- sd
-    betas[i, "Beta"] <- b
-    preperiod <- subset(impact$series, cum.effect == 0)
-    betas[i, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
+    betas[i+1, "SD"] <- sd
+    betas[i+1, "Beta"] <- b
+    preperiod <- subset(m$series, cum.effect == 0)
+    betas[i+1, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
   }
   
   ## create statistics
