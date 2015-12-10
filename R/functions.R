@@ -16,11 +16,11 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit){
       test <- mkts[[1]]
       ref <- mkts[[2]]
       dates <- mkts[[3]]
-      if (var(test)==0 & messages==0){
-        print(paste0("NOTE: test market ", ThisMarket, " has no variance and hence will be excluded"))
+      if ((var(test)==0 | length(test)<=2*warping_limit) & messages==0){
+        print(paste0("NOTE: test market ", ThisMarket, " has insufficient data or no variance and hence will be excluded"))
         messages <- messages + 1
       }
-      if (ThisMarket != ThatMarket & messages==0 & var(ref)>0 & length(test)>warping_limit){
+      if (ThisMarket != ThatMarket & messages==0 & var(ref)>0 & length(test)>2*warping_limit){
         dist <- dtw(test, ref, stepPattern=asymmetric, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abs(sum(test))
         distances[row, "Correlation"] <- cor(test, ref)
         distances[row, "RelativeDistance"] <- dist
