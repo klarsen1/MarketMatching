@@ -2,7 +2,7 @@ lagp <- function(x, p){
   return(c(rep(0,p), x[1:(length(x)-p)]))
 }
 
-calculate_distances <- function(all_markets, data, id, i, warping_limit){
+calculate_distances <- function(all_markets, data, id, i, warping_limit, matches){
     row <- 1
     ThisMarket <- all_markets[i]
     distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
@@ -34,11 +34,14 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit){
       }
       row <- row + 1
     }
+    distances$matches <- matches
     distances <- dplyr::filter(distances, Skip==FALSE) %>%
       dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
       dplyr::arrange(dist_rank) %>%
       dplyr::select(-dist_rank, -Skip) %>%
-      dplyr::filter(row_number()==1)
+      dplyr::mutate(rank=row_number()) %>%
+      dplyr::filter(rank<=matches) %>%
+      dplyr::select(-matches)
     
     distances$MatchingStartDate <- min(dates)
     distances$MatchingEndDate <- max(dates)
@@ -64,10 +67,19 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
 
 create_market_vectors <- function(data, test_market, ref_market){
    d <- subset(data, !is.na(match_var))
-   test <- subset(data, id_var==test_market)$match_var
-   ref <- subset(data, id_var==ref_market)$match_var
-   date <- subset(data, id_var==test_market)$date_var
-   return(list(test, ref, date))
+   test <- subset(d, id_var==test_market)[,c("date_var", "match_var")]
+   names(test)[2] <- "y"
+   if (length(ref_market)==1){
+     ref <- subset(d, id_var == ref_market[1])[,c("date_var", "match_var")]
+     names(ref)[2] <- "x1"
+     f <- dplyr::inner_join(test, ref, by="date_var")
+     return(list(as.numeric(f$y), as.numeric(f$x1), as.Date(f$date_var)))
+   } else if (length(ref_market)>1){
+     ref <- dcast(subset(d, id_var %in% ref_market), date_var ~ id_var, value.var="match_var")
+     names(ref) <- c("date_var", paste0("x", seq(1:length(ref_market))))
+     f <- data.frame(dplyr::inner_join(test, ref, by="date_var"))
+     return(list(as.numeric(f$y), dplyr::select(f, num_range("x", 1:length(ref_market))), as.Date(f$date_var)))
+   }
 }
 
 mape_no_zeros <- function(test, ref){
@@ -85,7 +97,7 @@ dw <- function(y, yhat){
 
 #' For each market, find the best matching control market
 
-#' \code{best_matches} finds the best macthing control market for each market in the dataset. 
+#' \code{best_matches} finds the best macthing control markets for each market in the dataset. 
 #' The function returns an object of type "market_matching" using dynamic time warping (dtw package). 
 #' The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.
 
@@ -99,6 +111,7 @@ dw <- function(y, yhat){
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"
 #' @param end_match_period the end date of the matching period (pre period). 
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
+#' @param matches Number of macthing markets to keep in the output
 
 #' @import foreach
 #' @importFrom parallel detectCores 
@@ -124,7 +137,7 @@ dw <- function(y, yhat){
 #'                    end_match_period="2014-10-01")
 #' head(mm$BestMatches)
 
-best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=2, parallel=TRUE, start_match_period=NULL, end_match_period=NULL){
+best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=2, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5){
   
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
@@ -137,7 +150,6 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
   data$match_var <- data[[matching_variable]]
   
   data <- dplyr::arrange(data, id_var, date_var) %>% ungroup() %>% select(id_var, date_var, match_var)
-  
   ## save a reduced version of the data
   saved_data <- data
   
@@ -149,21 +161,21 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
   
   ## filter the dates
   data <- dplyr::filter(data, date_var>=as.Date(start_match_period) & date_var<=as.Date(end_match_period))
-
+  
   ## check if any data is left
   stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
   
   ## loop through markets and compute distances
   if (parallel==FALSE){
     for (i in 1:length(all_markets)){
-      all_distances[[i]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit)
+      all_distances[[i]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches)
     }
     shortest_distances <- data.frame(rbindlist(all_distances))
   } else{
     ncore <- detectCores()-1
     registerDoParallel(ncore)
     loop_result <- foreach(i=1:length(all_markets)) %dopar% {
-      calculate_distances(all_markets, data, id_variable, i, warping_limit)
+      calculate_distances(all_markets, data, id_variable, i, warping_limit, matches)
     }
     shortest_distances <- data.frame(rbindlist(loop_result))
     stopImplicitCluster()
@@ -185,13 +197,14 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' @param test_market The name of the test market (character)
 #' @param end_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
 #' @param alpha Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals
-#' @param prior_level_sd Prior SD for the local level term. Default is 0.01. The biggesr this number is, the more wiggliness is allowed for the local level term. 
-#' More wiggliness can diminish the role of the control market, which is not always desirable.
+#' @param prior_level_sd Prior SD for the local level term. Default is 0.01. The biggesr this number is, the more wiggliness is allowed for the local level term.
+#' Note that more wiggly local level terms also translate into larger posterior intervals.
+#' @param control_matches Number of matching control markets to use in the analysis
 
 #' @import scales
 #' @import ggplot2
 #' @import zoo
-#' @importFrom reshape2 melt
+#' @importFrom reshape2 melt dcast
 
 #' @export inference
 #' @examples  
@@ -214,31 +227,34 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #'                      end_post_period="2015-12-15", 
 #'                      prior_level_sd=0.002)
 
-inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.001){
+inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5){
 
   ## copy the distances
-  mm <- matched_markets$BestMatches
+  mm <- dplyr::filter(matched_markets$BestMatches, rank<=control_matches)
   
   data <- matched_markets$Data  
   mm$id_var <- mm[[names(mm)[1]]]
+  mm <- dplyr::arrange(mm, id_var, BestControl)
   
   ## check if the test market exists
   stopif(test_market %in% unique(data$id_var), FALSE, paste0("test market ", test_market, " does not exist"))
 
   ## if an end date has not been provided, then choose the max of the data
   if (is.null(end_post_period)){
-    end_post_period <- max(subset(data, id_var==test_market)$date_var)
+    end_post_period <- as.Date(max(subset(data, id_var==test_market)$date_var))
   }
   
   # filter for dates
-  data <- dplyr::filter(data, date_var>=as.Date(mm[1, "MatchingStartDate"]) & date_var<=as.Date(end_post_period))
+  MatchingStartDate <- as.Date(subset(mm, id_var==test_market)$MatchingStartDate[1])
+  MatchingEndDate <- as.Date(subset(mm, id_var==test_market)$MatchingEndDate[1])
+  data <- dplyr::filter(data, date_var>=MatchingStartDate & date_var<=as.Date(end_post_period))
 
   ## get the control market name
   control_market <- subset(mm, id_var==test_market)$BestControl
   
   ## get the test and ref markets
   mkts <- create_market_vectors(data, test_market, control_market)
-  test <- mkts[[1]]
+  y <- mkts[[1]]
   ref <- mkts[[2]]
   date <- mkts[[3]]
   end_post_period <- max(date)
@@ -246,17 +262,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   stopif(length(post_period)==0, TRUE, "ERROR: no valid data in the post period")
   post_period_start_date <- min(post_period)
   post_period_end_date <- max(post_period)
-  ts <- zoo(cbind.data.frame(test, ref), date)
-  names(ts) <- c("y", "x1")
-
-  ## get the dates for the pre-period
-  MatchingStartDate <- subset(mm, id_var==test_market)$MatchingStartDate
-  MatchingEndDate <- subset(mm, id_var==test_market)$MatchingEndDate
+  ts <- zoo(cbind.data.frame(y, ref), date)
 
   ## print the settings
   cat("\t------------- Inputs -------------\n")
   cat(paste0("\tTest Market: ", test_market, "\n"))
-  cat(paste0("\tControl Market: ", control_market, "\n"))
+  for (i in 1:length(control_market)){
+    cat(paste0("\tControl Market ", i, ": ", control_market[i], "\n"))
+  }
   cat(paste0("\tMarket ID: ", matched_markets$MarketID, "\n"))
   cat(paste0("\tDate Variable: ", matched_markets$DateVariable, "\n"))
   cat(paste0("\tMatching (pre) Period Start Date: ", MatchingStartDate, "\n"))
@@ -264,8 +277,8 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   cat(paste0("\tPost Period Start Date: ", post_period_start_date, "\n"))
   cat(paste0("\tPost Period End Date: ", post_period_end_date, "\n"))
   cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
-  cat(paste0("\tLocal level prior SD: ", prior_level_sd, "\n"))
-  cat(paste0("\tPosterior intervals: ", 100*(1-alpha), "%\n"))
+  cat(paste0("\tLocal Level Prior SD: ", prior_level_sd, "\n"))
+  cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
   cat("\n")
   cat("\n")
   
@@ -276,14 +289,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
 
   ## estimate betas for different values of prior sd
   betas <- data.frame(matrix(nrow=11, ncol=4))
-  names(betas) <- c("SD", "Beta", "DW", "MAPE")
+  names(betas) <- c("SD", "MaxBeta", "DW", "MAPE")
   for (i in 0:20){
     step <- (max(0.1, prior_level_sd) - min(0.001, prior_level_sd))/20
     sd <- min(0.001, prior_level_sd) + step*i
     m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=sd))
-    b <- colMeans(m$model$bsts.model$coefficients)[2]
+    b <- max(colMeans(m$model$bsts.model$coefficients))
     betas[i+1, "SD"] <- sd
-    betas[i+1, "Beta"] <- b
+    betas[i+1, "MaxBeta"] <- b
     preperiod <- subset(m$series, cum.effect == 0)
     betas[i+1, "DW"] <- dw(preperiod$response, preperiod$point.pred)
     betas[i+1, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
@@ -306,14 +319,16 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   results[[9]] <- dw(preperiod$response, preperiod$point.pred)
   
   cat("\t------------- Model Stats -------------\n")
-  cat(paste0("\tMAPE: ", round(100*results[[8]], 2) , "%\n"))
-  cat(paste0("\tBeta: ", round(colMeans(impact$model$bsts.model$coefficients)[2], 2) , "\n"))
+  cat(paste0("\tMatching (pre) Period MAPE: ", round(100*results[[8]], 2) , "%\n"))
+  for (i in 2:length(colMeans(impact$model$bsts.model$coefficients))){
+    cat(paste0("\tBeta ", i-1, " [", control_market[i-1], "]: ", round(colMeans(impact$model$bsts.model$coefficients)[i], 4) , "\n"))
+  }
   cat(paste0("\tDW: ", round(results[[9]], 2) , "\n"))
   cat("\n")
   cat("\n")
   
-  ymin <- min(min(impact$series$response), min(impact$series$point.pred.lower), min(ref), min(test))
-  ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(test))
+  ymin <- min(min(impact$series$response), min(impact$series$point.pred.lower), min(ref), min(y))
+  ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(y))
   
   ## create actual versus predicted plots
   plotdf <- cbind.data.frame(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
@@ -338,14 +353,10 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                    geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
 
   ## create plots of the actual data
-  plotdf <- cbind.data.frame(test, ref, date)
-  plotdf$test_market <- test_market
-  plotdf$control_market <- control_market
-  results[[12]] <- ggplot(data=plotdf, aes(x=date)) + 
-    geom_line(aes(y=test, colour = test_market)) + 
-    geom_line(aes(y=ref, colour = control_market)) + 
-    theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
-    scale_colour_manual(breaks = c(test_market, control_market), values = c("gray", "black")) +
+  plotdf <- data[data$id_var %in% c(test_market, control_market),]
+  results[[12]] <- ggplot(data=plotdf, aes(x=date_var, y=match_var, colour=id_var)) + 
+    geom_line() + 
+    theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("Date") + 
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     scale_y_continuous(labels = comma, limits=c(ymin, ymax))
   
@@ -389,8 +400,8 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                  TailProb=results[[7]], PrePeriodMAPE=results[[8]], DW=results[[9]],
                  PlotActualVersusExpected=results[[10]], PlotAbsoluteEffect=results[[11]],
                  PlotActuals=results[[12]], PlotPriorLevelSdAnalysis=results[[14]], 
-                 PlotLocalLevel=results[[15]], TestData=test, ControlData=ref, PlotResiduals=results[[16]],
-                 PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market)
+                 PlotLocalLevel=results[[15]], TestData=y, ControlData=ref, PlotResiduals=results[[16]],
+                 PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market, ZooData=ts)
   class(object) <- "matched_market_inference"
   return (object)
 }
