@@ -331,10 +331,10 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(y))
   
   ## create actual versus predicted plots
-  plotdf <- cbind.data.frame(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
-  names(plotdf) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
-  plotdf$test_market <- test_market
-  results[[10]] <- ggplot(data=plotdf, aes(x=Date)) + 
+  avp <- cbind.data.frame(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
+  names(avp) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
+  avp$test_market <- test_market
+  results[[10]] <- ggplot(data=avp, aes(x=Date)) + 
                   geom_line(aes(y=Response, colour = test_market), size=1.2) + 
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
                   geom_line(aes(y=Predicted, colour = "Expected"), size=1.2) + 
@@ -342,7 +342,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                   scale_colour_manual(breaks = c(test_market, "Expected"), values = c("gray", "black")) +
                   geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + 
                   scale_y_continuous(labels = comma, limits=c(ymin, ymax))
-    
+  avp$test_market <- NULL
     
   ## create lift plots
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("cum.effect", "cum.effect.lower", "cum.effect.upper")])
@@ -401,7 +401,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                  PlotActualVersusExpected=results[[10]], PlotAbsoluteEffect=results[[11]],
                  PlotActuals=results[[12]], PlotPriorLevelSdAnalysis=results[[14]], 
                  PlotLocalLevel=results[[15]], TestData=y, ControlData=ref, PlotResiduals=results[[16]],
-                 PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market, ZooData=ts)
+                 PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market, ZooData=ts, Predictions=avp)
   class(object) <- "matched_market_inference"
   return (object)
 }

@@ -3,12 +3,14 @@ If you ever spent time in the field of marketing analytics, chances are that you
 
 An intervention analysis usually involves two steps:
 
-1. Find *control* market(s) for the *test* market(s) where the event took place, using time series matching based on data prior to the event (pre period).
+1. Find *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
 
-The most straight-forward approach to this would be to use a simple Euclidian distance for step 1, and then a "diff in diff" model for step 2. However, this assumes that markets are always aligned historically, observaitons are i.i.d., and that the difference between the test and control markets is constant in the pre-intervention period. Although we prefer markets to be aligned, shifts can occur and we do not want to overpenalize occasional deviations. Moreover, the gap between the test and control markets can fluctuate – which should be factored into the uncertainty – and time series data are rarely i.i.d.
+The most straight-forward approach to this would be to use a simple Euclidian distance for step 1. But this assigns an undue amount of penalty to instances where the markets are not perfectly aligned. Although we prefer markets to be aligned, occassional shifts can occur historically and we do not want to exclude markets because of that. 
 
-A better approach is to use *dynamic time warping* for the time series matching and a Bayesian structural time series model to do the post period inference. The dynamic time warping can be achieved with the `dtw` package (available on CRAN) and the post period analysis can be achieved with the `CausalImpact` analysis created by Kay Brodersen at Google. In fact, the MarketMatching package can be considered a "wrapper" for combining these two packages
+For step 2, the traditional approach is a "diff in diff" model for step 2. However, this assumes  are i.i.d. and that the difference between the test and control markets is constant in the pre-intervention period. These assumptions rarely hold true for time series data.
+
+A better approach is to use *dynamic time warping* for the time series matching and a state space model to do the post period inference. The dynamic time warping can be achieved with the `dtw` package (available on CRAN) and the post period analysis can be achieved with the `CausalImpact` analysis created by Kay Brodersen at Google. In fact, the MarketMatching package can be considered a "wrapper" for combining these two packages
 
 In theory, we don't need a test and a control market to do an intervention analysis – we can use a state space model derived from the test group to establish the the baseline for the post period. However, introducing a control market as an input into the expectation for the post period promotes transparancy in terms of where the expectation comes from and does a nice job of capturing seasonality when history is limited or a short pre period is desired. 
 
