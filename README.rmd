@@ -3,23 +3,19 @@ If you ever spent time in the field of marketing analytics, chances are that you
 
 An intervention analysis usually involves two steps:
 
-1. Find *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
+1. Find plausible *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
 
-The most straight-forward approach to this would be to use a simple Euclidian distance for step 1. But this assigns an undue amount of penalty to instances where the markets are not perfectly aligned. Although we prefer markets to be aligned, occassional shifts can occur historically and we do not want to exclude markets because of that. 
+For step 1, the most straight-forward approach to this would be to use a simple Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occassional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a "diff in diff" model. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
 
-For step 2, the traditional approach is a "diff in diff" model for step 2. However, this assumes  are i.i.d. and that the difference between the test and control markets is constant in the pre-intervention period. These assumptions rarely hold true for time series data.
+A better approach is to use *dynamic time warping* for the time series matching (step 1) which finds the minimal-path distance between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the `CausalImpact` package created by Kay Brodersen at Google. The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a state space model with linear regression components based on a set of plausible control markets. 
 
-A better approach is to use *dynamic time warping* for the time series matching and a state space model to do the post period inference. The dynamic time warping can be achieved with the `dtw` package (available on CRAN) and the post period analysis can be achieved with the `CausalImpact` analysis created by Kay Brodersen at Google. In fact, the MarketMatching package can be considered a "wrapper" for combining these two packages
-
-In theory, we don't need a test and a control market to do an intervention analysis – we can use a state space model derived from the test group to establish the the baseline for the post period. However, introducing a control market as an input into the expectation for the post period promotes transparancy in terms of where the expectation comes from and does a nice job of capturing seasonality when history is limited or a short pre period is desired. 
+In theory, we don't really need step 1 to do these type of analyses; the `CausalImpact` package can select the most predictive markets for the state space model using spike-and-slab priors. However, when dealing with a large candidate control markets it is prudent to trim the list before applying variable selection. 
 
 # About MarketMatching Package
 
-The `MarketMatching` package is designed to perform the two key steps needed to do an intervention analysis:
+The `MarketMatching` package implements the workflow described above by providing a "wrapper" for the two packages above so that minimal input is required from the user and output can easily be extracted for presentations. 
 
-* For all markets in the input dataset, find the best control market using time series matching
-* Given a test market and a matching control market (from above), analyze the causal impact of an intervention
 
 # Simple Example
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
