@@ -101,7 +101,8 @@ dw <- function(y, yhat){
 #' The function returns an object of type "market_matching" using dynamic time warping (dtw package). 
 #' The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.
 
-#' @param data input data.frame for analysis
+#' @param data input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
+#' In other words, markets are rows and not columns -- we have a unique row for each area/time combination.
 #' @param id_variable the name of the variable that identifies the markets
 #' @param date_variable the time stamp variable
 #' @param matching_variable the variable (metric) used to match the markets. For example, this could be sales or new customers

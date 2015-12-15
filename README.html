@@ -63,22 +63,26 @@ img {
 
 <div id="market-matching-and-causal-impact-inference" class="section level1">
 <h1>Market Matching and Causal Impact Inference</h1>
-<p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we can not track the impact at the indidual customer level and hence we have to resort to analyzing the impact from a bird’s eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA state, etc.).</p>
+<p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event in this context could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we cannot track the impact at the indidual customer level and hence have to analyze the impact from a bird’s eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA state, etc.). Data science may be changing, but this is a use-case that has been around forever and is still very relavant.</p>
 <p>An intervention analysis usually involves two steps:</p>
 <ol style="list-style-type: decimal">
-<li>Find <em>control</em> market(s) for the <em>test</em> market(s) where the event took place, using time series matching based on data prior to the event (pre period).</li>
+<li>Find plausible <em>control</em> markets for the <em>test</em> market where the event took place, using time series matching based on data prior to the event (pre period).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event.</li>
 </ol>
-<p>The most straight-forward approach to this would be to use a simple Euclidian distance for step 1, and then a “diff in diff” model for step 2. However, this assumes that markets are always aligned historically and that the difference between the test and control markets is constant. Although we prefer markets to be aligned, shifts can occur and we do not want to overpenalize occasional deviations. Moreover, the gap between the test and control markets can fluctuate and this should be factored into the uncertainty of the post period analysis.</p>
-<p>A better approach is to use <em>dynamic time warping</em> for the time series matching and a Bayesian structural time series model to do the post period inference. The dynamic time warping can be achieved with the <code>dtw</code> package (available on CRAN) and the post period analysis can be achieved with the <code>CausalImpact</code> analysis created by Kay Brodersen at Google. In factm the MarketMatching package can be considered a “wrapper” for combining these two packages</p>
-<p>In theory, we don’t need a test and a control market to do an intervention analysis – we can use a structural time series model derived from the test group to establish the the baseline for the post period. However, introducing a control market as an input into the expectation for the post period promotes transparancy in terms of where the expectation comes from and does a nice job of capturing seasonality when history is limited or a short pre period is desired.</p>
+<p>For step 1, the most straight-forward approach to this would be to use a simple Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occassional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a “diff in diff” model. However, this assumes are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.</p>
+<p>A better approach is to use <em>dynamic time warping</em> for the time series matching (step 1) which finds the minimal-path distance between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the <code>CausalImpact</code> package created by Kay Brodersen at Google. The <code>CausalImpact</code> package constructs a synthetic baseline for the post-intervention period based on a state space model with linear regression components based on a set of plausible control markets.</p>
+<p>In theory, we don’t really need step 1 to do these type of analyses; the <code>CausalImpact</code> package can select the most predictive markets for the state space model using spike-and-slab priors. However, when dealing with a large candidate control markets it is prudent to trim the list before applying variable selection.</p>
 </div>
 <div id="about-marketmatching-package" class="section level1">
 <h1>About MarketMatching Package</h1>
-<p>The <code>MarketMatching</code> package is designed to perform the two key steps needed to do an intervention analysis:</p>
+<p>The <code>MarketMatching</code> package implements the workflow described above by providing a “wrapper” for the <code>dtw</code> and <code>CausalImpact</code> packages. Hence, the package does not provide any functionality that cannot be found in these packages, but rather simplifies the workflow by setting up the data and providing output that can easily be extracted for presentations. Summary of features:</p>
 <ul>
-<li>For all markets in the input dataset, find the best control market using time series matching</li>
-<li>Given a test market and a matching control market (from above), analyze the causal impact of an intervention</li>
+<li>Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference) and the dates of the pre-period and post-period.</li>
+<li>Provides a data.frame with the best <span class="math">\(K\)</span> matches for all markets in the input dataset.</li>
+<li>Outputs all inference results as objects with intutive names (e.g., “AbsoluteEffect” and “RelativeEffect”).</li>
+<li>Calculates MAPE and Durbin-Watson for the pre-period. Shows how these statistics change when you alter the prior standard error of the local level term.</li>
+<li>Plots and outputs the actual data for the markets selected during the initial market matching.</li>
+<li>Plots and outputs actual versus predicted values.</li>
 </ul>
 </div>
 <div id="simple-example" class="section level1">
@@ -89,7 +93,7 @@ img {
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package=&quot;MarketMatching&quot;)
-mm &lt;- best_matches(data=weather, id=&quot;Area&quot;, 
+mm &lt;- best_matches(data=weather, id_variable=&quot;Area&quot;, 
                   date_variable=&quot;Date&quot;, 
                   matching_variable=&quot;Mean_TemperatureF&quot;, 
                   parallel=FALSE, 
@@ -102,8 +106,13 @@ subset(mm$Distances, Area==&quot;CPH&quot;)
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
 ## Since this is weather data this is a meaningless example and we should 
 ## expect no causal impact. This is just to demo the function.
+## We're using a tight prior SD on the local level term.
 ##-----------------------------------------------------------------------
-results &lt;- MarketMatching::inference(matched_markets = mm, test_market = &quot;CPH&quot;, end_post_period = &quot;2015-10-01&quot;)
+library(CausalImpact)
+results &lt;- MarketMatching::inference(matched_markets = mm, 
+                                    test_market = &quot;CPH&quot;, 
+                                    end_post_period = &quot;2015-10-01&quot;,
+                                    prior_level_sd = 0.002)
  
 ## Plot the impact
 results$PlotAbsoluteEffect
