@@ -3,16 +3,17 @@
 \name{best_matches}
 \alias{best_matches}
 \title{For each market, find the best matching control market
-\code{best_matches} finds the best macthing control market for each market in the dataset.
+\code{best_matches} finds the best macthing control markets for each market in the dataset.
 The function returns an object of type "market_matching" using dynamic time warping (dtw package).
 The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.}
 \usage{
 best_matches(data = NULL, id_variable = NULL, date_variable = NULL,
   matching_variable = NULL, warping_limit = 2, parallel = TRUE,
-  start_match_period = NULL, end_match_period = NULL)
+  start_match_period = NULL, end_match_period = NULL, matches = 5)
 }
 \arguments{
-\item{data}{input data.frame for analysis}
+\item{data}{input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
+In other words, markets are rows and not columns -- we have a unique row for each area/time combination.}
 
 \item{id_variable}{the name of the variable that identifies the markets}
 
@@ -29,10 +30,12 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"}
 
 \item{end_match_period}{the end date of the matching period (pre period).
 Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
+
+\item{matches}{Number of macthing markets to keep in the output}
 }
 \description{
 For each market, find the best matching control market
-\code{best_matches} finds the best macthing control market for each market in the dataset.
+\code{best_matches} finds the best macthing control markets for each market in the dataset.
 The function returns an object of type "market_matching" using dynamic time warping (dtw package).
 The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.
 }

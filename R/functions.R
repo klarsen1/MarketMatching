@@ -65,6 +65,7 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(length(unique(data[[id]]))>2, FALSE, "ERROR: Need at least 3 unique markets")
 }
 
+#' @importFrom reshape2 melt dcast
 create_market_vectors <- function(data, test_market, ref_market){
    d <- subset(data, !is.na(match_var))
    test <- subset(d, id_var==test_market)[,c("date_var", "match_var")]
@@ -75,7 +76,7 @@ create_market_vectors <- function(data, test_market, ref_market){
      f <- dplyr::inner_join(test, ref, by="date_var")
      return(list(as.numeric(f$y), as.numeric(f$x1), as.Date(f$date_var)))
    } else if (length(ref_market)>1){
-     ref <- dcast(subset(d, id_var %in% ref_market), date_var ~ id_var, value.var="match_var")
+     ref <- reshape2::dcast(subset(d, id_var %in% ref_market), date_var ~ id_var, value.var="match_var")
      names(ref) <- c("date_var", paste0("x", seq(1:length(ref_market))))
      f <- data.frame(dplyr::inner_join(test, ref, by="date_var"))
      return(list(as.numeric(f$y), dplyr::select(f, num_range("x", 1:length(ref_market))), as.Date(f$date_var)))
@@ -205,7 +206,6 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' @import scales
 #' @import ggplot2
 #' @import zoo
-#' @importFrom reshape2 melt dcast
 
 #' @export inference
 #' @examples  
@@ -290,14 +290,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
 
   ## estimate betas for different values of prior sd
   betas <- data.frame(matrix(nrow=11, ncol=4))
-  names(betas) <- c("SD", "MaxBeta", "DW", "MAPE")
+  names(betas) <- c("SD", "SumBeta", "DW", "MAPE")
   for (i in 0:20){
     step <- (max(0.1, prior_level_sd) - min(0.001, prior_level_sd))/20
     sd <- min(0.001, prior_level_sd) + step*i
     m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=sd))
-    b <- max(colMeans(m$model$bsts.model$coefficients))
+    b <- sum(colMeans(m$model$bsts.model$coefficients))
     betas[i+1, "SD"] <- sd
-    betas[i+1, "MaxBeta"] <- b
+    betas[i+1, "SumBeta"] <- b
     preperiod <- subset(m$series, cum.effect == 0)
     betas[i+1, "DW"] <- dw(preperiod$response, preperiod$point.pred)
     betas[i+1, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
@@ -344,7 +344,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
                   geom_line(aes(y=Predicted, colour = "Expected"), size=1.2) + 
                   theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
-                  scale_colour_manual(breaks = c(test_market, "Expected"), values = c("gray", "black")) +
+                  scale_colour_manual(breaks = c(test_market, "Expected"), values = c("black", "gray")) +
                   geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + 
                   scale_y_continuous(labels = comma, limits=c(ymin, ymax))
   avp$test_market <- NULL

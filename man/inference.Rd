@@ -7,7 +7,8 @@
 The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).}
 \usage{
 inference(matched_markets = NULL, test_market = NULL,
-  end_post_period = NULL, alpha = 0.05, prior_level_sd = 0.01)
+  end_post_period = NULL, alpha = 0.05, prior_level_sd = 0.01,
+  control_matches = 5)
 }
 \arguments{
 \item{matched_markets}{A matched_market object created by the market_matching function}
@@ -19,7 +20,9 @@ inference(matched_markets = NULL, test_market = NULL,
 \item{alpha}{Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals}
 
 \item{prior_level_sd}{Prior SD for the local level term. Default is 0.01. The biggesr this number is, the more wiggliness is allowed for the local level term.
-More wiggliness can diminish the role of the control market, which is not always desirable.}
+Note that more wiggly local level terms also translate into larger posterior intervals.}
+
+\item{control_matches}{Number of matching control markets to use in the analysis}
 }
 \description{
 Given a test market, analyze the impact of an intervention
