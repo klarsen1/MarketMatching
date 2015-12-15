@@ -321,7 +321,11 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   
   cat("\t------------- Model Stats -------------\n")
   cat(paste0("\tMatching (pre) Period MAPE: ", round(100*results[[8]], 2) , "%\n"))
+  avg_coeffs <- data.frame(nrow=length(colMeans(impact$model$bsts.model$coefficients))-1, ncol=2)
+  names(avg_coeffs) <- c("Market", "AverageBeta")
   for (i in 2:length(colMeans(impact$model$bsts.model$coefficients))){
+    avg_coeffs[i-1, "Market"] <- control_market[i-1]
+    avg_coeffs[i-1, "AverageBeta"] <- colMeans(impact$model$bsts.model$coefficients)[i]
     cat(paste0("\tBeta ", i-1, " [", control_market[i-1], "]: ", round(colMeans(impact$model$bsts.model$coefficients)[i], 4) , "\n"))
   }
   cat(paste0("\tDW: ", round(results[[9]], 2) , "\n"))
@@ -402,7 +406,8 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
                  PlotActualVersusExpected=results[[10]], PlotAbsoluteEffect=results[[11]],
                  PlotActuals=results[[12]], PlotPriorLevelSdAnalysis=results[[14]], 
                  PlotLocalLevel=results[[15]], TestData=y, ControlData=ref, PlotResiduals=results[[16]],
-                 PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market, ZooData=ts, Predictions=avp)
+                 PredictedValues=impact$series$point.pred, TestName=test_market, ControlName=control_market, ZooData=ts, Predictions=avp,
+                 CausalImpactObject=impact, Coefficients=avg_coeffs)
   class(object) <- "matched_market_inference"
   return (object)
 }

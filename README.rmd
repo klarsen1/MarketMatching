@@ -17,28 +17,31 @@ In theory, we don't really need step 1 to do these type of analyses; the `Causal
 The `MarketMatching` package implements the workflow described above by providing a "wrapper" for the `dtw` and `CausalImpact` packages. Hence, the package does not provide any functionality that cannot be found in these packages, but rather simplifies the workflow by setting up the data and providing output that can easily be extracted for presentations. Summary of features:
 
 * Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference) and the dates of the pre-period and post-period.
-* Provides a data.frame with the best $K$ matches for all markets in the input dataset.
+* Provides a data.frame with the best $K$ matches for all markets in the input dataset. $K$ can be defined by the user.
 * Outputs all inference results as objects with intutive names (e.g., "AbsoluteEffect" and "RelativeEffect").
 * Calculates MAPE and Durbin-Watson for the pre-period. Shows how these statistics change when you alter the prior standard error of the local level term.
 * Plots and outputs the actual data for the markets selected during the initial market matching.
 * Plots and outputs actual versus predicted values.
 * Plots the final local level term.
+* Shows the average estimated coefficients for all the markets used in the linear regression component of the state space model.
 
+# How Dynamic Time Warping Works
 
-
+# Intervention Inference With the `CausalImpact` Package
 
 # Simple Example
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 library(MarketMatching)
 ##-----------------------------------------------------------------------
-## Find best matches for each airport time series
+## Find the best 5 matches for each airport time series
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
 mm <- best_matches(data=weather, id_variable="Area", 
                   date_variable="Date", 
                   matching_variable="Mean_TemperatureF", 
-                  parallel=FALSE, 
+                  parallel=FALSE,
+                  matches=5,
                   start_match_period="2014-01-01",
                   end_match_period="2014-10-01")
 head(mm$Distances)
@@ -59,8 +62,25 @@ results <- MarketMatching::inference(matched_markets = mm,
 ## Plot the impact
 results$PlotAbsoluteEffect
  
-## Plot actual observations for test market (CPH) versus the expectation (based on the control)
+## Plot actual observations for test market (CPH) versus the expectation
 results$PlotActualVersusFitted
+
+## Store actual versus predicted in a data.frame
+pred <- results$Predictions
+print(head(pred))
+
+## PLot the actual data for the test and control markets
+results$PlotActuals
+
+## Check DW, MAPE and largest market coefficient for different values of the local level SE
+results$PlotPriorLevelSdAnalysis
+
+## Store the coefficients in a data.frame
+coeff <- results$Coefficients
+print(head(coeff))
+
+## Grab the CausalImpact object
+impact <- results$CausalImpactObject
 ```
 
 # How to Install

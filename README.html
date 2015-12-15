@@ -78,12 +78,20 @@ img {
 <p>The <code>MarketMatching</code> package implements the workflow described above by providing a “wrapper” for the <code>dtw</code> and <code>CausalImpact</code> packages. Hence, the package does not provide any functionality that cannot be found in these packages, but rather simplifies the workflow by setting up the data and providing output that can easily be extracted for presentations. Summary of features:</p>
 <ul>
 <li>Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference) and the dates of the pre-period and post-period.</li>
-<li>Provides a data.frame with the best <span class="math">\(K\)</span> matches for all markets in the input dataset.</li>
+<li>Provides a data.frame with the best <span class="math">\(K\)</span> matches for all markets in the input dataset. <span class="math">\(K\)</span> can be defined by the user.</li>
 <li>Outputs all inference results as objects with intutive names (e.g., “AbsoluteEffect” and “RelativeEffect”).</li>
 <li>Calculates MAPE and Durbin-Watson for the pre-period. Shows how these statistics change when you alter the prior standard error of the local level term.</li>
 <li>Plots and outputs the actual data for the markets selected during the initial market matching.</li>
 <li>Plots and outputs actual versus predicted values.</li>
+<li>Plots the final local level term.</li>
+<li>Shows the average estimated coefficients for all the markets used in the linear regression component of the state space model.</li>
 </ul>
+</div>
+<div id="how-dynamic-time-warping-works" class="section level1">
+<h1>How Dynamic Time Warping Works</h1>
+</div>
+<div id="intervention-inference-with-the-causalimpact-package" class="section level1">
+<h1>Intervention Inference With the <code>CausalImpact</code> Package</h1>
 </div>
 <div id="simple-example" class="section level1">
 <h1>Simple Example</h1>
@@ -118,7 +126,10 @@ results &lt;- MarketMatching::inference(matched_markets = mm,
 results$PlotAbsoluteEffect
  
 ## Plot actual observations for test market (CPH) versus the expectation (based on the control)
-results$PlotActualVersusFitted</code></pre>
+results$PlotActualVersusFitted
+
+## PLot the actual data for the test and control markets
+results$PlotActuals</code></pre>
 </div>
 <div id="how-to-install" class="section level1">
 <h1>How to Install</h1>
