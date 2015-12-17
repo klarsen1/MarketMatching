@@ -6,9 +6,9 @@ An intervention analysis usually involves two steps:
 1. Find plausible *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
 
-For step 1, the most straight-forward approach to this would be to use a simple Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occassional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a "diff in diff" model. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
+For step 1, the most straight-forward approach to this would be to use the Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occassional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a "diff in diff" model. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
 
-A better approach is to use *dynamic time warping* for the time series matching (step 1) which finds the minimal-path distance between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the `CausalImpact` package created by Kay Brodersen at Google. The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a state space model with linear regression components based on a set of plausible control markets. 
+A better approach is to use *dynamic time warping* for the time series matching (step 1). This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the `CausalImpact` package created by Kay Brodersen at Google. The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a state space model with linear regression components based on a set of plausible control markets. 
 
 In theory, we don't really need step 1 to do these type of analyses; the `CausalImpact` package can select the most predictive markets for the state space model using spike-and-slab priors. However, when dealing with a large candidate control markets it is prudent to trim the list before applying variable selection. 
 
@@ -26,11 +26,81 @@ The `MarketMatching` package implements the workflow described above by providin
 * Shows the average estimated coefficients for all the markets used in the linear regression component of the state space model.
 
 # How Dynamic Time Warping Works
-Let's say we have two time series denoted by $X$ and $Z$. We want to calculate the distance between these two time series. As mentioned above, the most simple approach is to  
+Let's say we have two time series denoted by $X=(x_1, \ldots, x_n$)$ and $Z={z_1, \ldots, z_m$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that $M$ and $N$ do not need to be equal, although the `MarketMatching` package only considers cases where $m=n$ and denote the length by $T$. 
+
+In order to calculate the distance between these two time series, the first step is to create the *warping curve* $\phi(t) = (\phi_x(t), \phi_z(t))$. The goal of the warping curve is to remap the *indexes* of the original time series – through the *warping functions* $\phi_x(t)$ and $\phi_z(t)$ – such that the remapped series are as similar as possible, where similarity is defined by
+
+$$ D(X,Z) = \frac{1}{M_{\phi}} \sum_{i=1}^T d(\phi_x(t), \phi_z(t))*m_{\phi}(t). $$
+
+Here $d(\phi_x(t), \phi_z(t))$ is the local distance between the remapped data points and at index $t$, $m_{\phi}(t)$ is the per-step weight and $M_{\phi}$ is an optional normalization constant (ignored by the `MarketMatching` package). 
+
+Thus, the goal is essentially to find the warping curve, $\phi$ such that $D(X,Z)$ is minimized. Standard constraints include:
+
+* Monotonicity: ensures that the ordering of the indexes of the time series are preserved – i.e., $\phi_x(t+1) > \phi_x(t)$.
+* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well-known the Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than 2 weeks d.
+
+The per-step lenghts are defined by the "step pattern" which provides a flexible approach to control the slopes along the warping curve. For more details on this, and everything else related to dynamic time warping in R, see the `dtw` Vignette.
+
+## Example
+To see how this works, consider the following example. We'll use the weather dataset included with the `MarketMatching` package and use the first 10 days from the Copenhagen time series as the test market and San Francisco as the control market (query series).
+
+Note that the code in this example is not needed to run the `MarketMatching` package, the package will set it up for you. This is just to show the details behind the scene.
+
+First, let's look at the warping limits imposed by the Sakoe-Chiba band with $L=2$:
+```{r, echo = TRUE, message=FALSE, eval=TRUE}
+library(MarketMatching)
+library(dtw)
+data(weather, package="MarketMatching")
+
+cph <- subset(weather, Area=="CPH")$Mean_TemperatureF[1:10]
+sfo <- subset(weather, Area=="SFO")$Mean_TemperatureF[1:10]
+cph
+sfo
+
+align <- dtw(cph, sfo, stepPattern=asymmetric, window.type=sakoeChibaWindow, window.size=2, keep=TRUE)
+
+dtwWindow.plot(sakoeChibaWindow, window.size=2, reference=10, query=10)
+```
+This shows that, as expected, the band is a symmetric constraint arond the 45 degree line. 
+
+Next, let's look at the alignment between the two time series. The following code shows the two time series as well as how data points are connected:
+
+```{r, echo = TRUE, message=FALSE, eval=TRUE}
+plot(align,type="two", off=1)
+```
+
+This shows that the two cities are not well aligned naturally (not surprising), and that some reference values are mapped to four different query values (the most allowed).
+
+It also helps to look at the actual cost matrix and the optimal aligment path that leads to the minimal distance.
+
+```{r, echo = TRUE, message=FALSE, eval=TRUE}
+lcm <- align$localCostMatrix
+image(x=1:nrow(lcm),y=1:ncol(lcm),lcm)
+text(row(lcm),col(lcm),label=lcm)
+lines(align$index1,align$index2)
+```
+
+The cells represent The total cost (distance) can be computed by multiplying the distances by their respective weights and then summing up along the optimap path. This yields 195, which is a fairly large number given that the sum of all the elements of the reference series (cph) equals 418. Clearly, these two markets are not good matches.
+
+```{r, echo = TRUE, message=FALSE, eval=TRUE}
+align$distance
+align$distance / sum(cph)
+```
+
+For comparison, the distance between Zurich and Copenhagen is only 44:
+
+```{r, echo = TRUE, message=FALSE, eval=TRUE}
+zrh <- subset(weather, Area=="ZRH")$Mean_TemperatureF[1:10]
+dtw(cph, zrh, stepPattern=asymmetric, window.type=sakoeChibaWindow, window.size=2)$distance
+```
+
+# How Does Intervention Inference Work?
+As mentioned, the `MarketMatching` package uses the `CausalImpact` package written by Kay Brodersen at Google to do the post period inference.
 
 
 
-# Intervention Inference With the `CausalImpact` Package
+
+
 
 # How to Install
 ```{r, eval=FALSE}

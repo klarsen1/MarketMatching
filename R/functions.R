@@ -340,13 +340,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   names(avp) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
   avp$test_market <- test_market
   results[[10]] <- ggplot(data=avp, aes(x=Date)) + 
-                  geom_line(aes(y=Response, colour = test_market), size=1.2) + 
+                  geom_line(aes(y=Response, colour = "Observed"), size=1.2) + 
                   geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) + 
                   geom_line(aes(y=Predicted, colour = "Expected"), size=1.2) + 
                   theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") + 
-                  scale_colour_manual(breaks = c(test_market, "Expected"), values = c("black", "gray")) +
+                  scale_colour_manual(breaks = c("Observed", "Expected"), values = c("gray", "black")) +
                   geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) + 
-                  scale_y_continuous(labels = comma, limits=c(ymin, ymax))
+                  scale_y_continuous(labels = comma, limits=c(ymin, ymax)) +
+                  ggtitle(paste0("Test Market: ",test_market))
   avp$test_market <- NULL
     
   ## create lift plots
