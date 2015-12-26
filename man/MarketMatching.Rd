@@ -6,14 +6,14 @@
 \alias{MarketMatching-package}
 \title{Market matching and causal impact inference}
 \description{
-For a given test market find the best matching control market using time series matching and analyze the impact of an intervention.
+For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention.
 The intervention could be be a marketing event or some other local business tactic that is being tested.
 The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact.
 In fact, this package can be considered a wrapper for those two packages.
 }
 \details{
 The MarketMatching package can be used to perform the following analyses:
-- For all markets in the input dataset, find the best control market using time series matching
+- For all markets in the input dataset, find the best control markets using time series matching
 - Given a test market and a matching control market (from above), analyze the causal impact of an intervention
 
 The package utilizes the dtw package in CRAN to do the time series matching, and the CausalImpact package to do the inference.
@@ -22,7 +22,7 @@ The package utilizes the dtw package in CRAN to do the time series matching, and
 "CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/
 
 The MarketMatching has two separate functions to perform the tasks described above:
-- best_matches(): This function is used to find a matching control market for all markets in the input dataset.
+- best_matches(): This function is used to find matching controls market for all markets in the input dataset.
 - inference(): Given an object from best_matches(), analyze the causal impact of an intervention (defined by a time window).
 }
 \examples{
@@ -34,7 +34,7 @@ data(weather, package="MarketMatching")
 mm <- best_matches(data=weather, id_variable="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
-                   parallel=FALSE,
+                   parallel=TRUE,
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 head(mm$Distances)
@@ -55,7 +55,7 @@ results <- MarketMatching::inference(matched_markets = mm,
 results$PlotAbsoluteEffect
 
 ## Plot actual observations for test market (CPH) versus the expectation (based on the control)
-results$PlotActualVersusFitted
+results$PlotActualVersusExpected
 }
 \author{
 Kim Larsen (kblarsen4 at gmail.com)

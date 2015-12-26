@@ -1,106 +1,33 @@
 # Market Matching and Causal Impact Inference
-If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event in this context could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we cannot track the impact at the indidual customer level and hence have to analyze the impact from a bird's eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA state, etc.). Data science may be changing, but this is a use-case that has been around forever and is still very relavant.  
+If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event in this context could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we cannot track the impact at the indidual customer level and hence have to analyze the impact from a bird's eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA, state, etc.). Data science may be changing, but this is a use-case that has been around forever and is still very relavant.  
 
 An intervention analysis usually involves two steps:
 
-1. Find plausible *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
+1. Find matching *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
 
-For step 1, the most straight-forward approach to this would be to use the Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occassional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a "diff in diff" model. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
+For step 1, the most straight-forward approach to this would be to use the Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a "diff in diff" model. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
 
-A better approach is to use *dynamic time warping* for the time series matching (step 1). This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the `CausalImpact` package created by Kay Brodersen at Google. The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a state space model with linear regression components based on a set of plausible control markets. 
+A better approach is to use *dynamic time warping* for the time series matching (step 1). This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the `CausalImpact` package created by Kay Brodersen at Google (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based on a set of plausible control markets. 
 
-In theory, we don't really need step 1 to do these type of analyses; the `CausalImpact` package can select the most predictive markets for the state space model using spike-and-slab priors. However, when dealing with a large candidate control markets it is prudent to trim the list before applying variable selection. 
+## Note on the Workflow
+We don't really need step 1 to do these type of analyses; the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. However, when dealing with a large candidate control markets it is often prudent to trim the list before selecting the final variables. Moreover, basing your synthetic control on markets that have a small distance in the DTW analysis boosts the optical credibility of the analysis.  
 
 # About MarketMatching Package
 
-The `MarketMatching` package implements the workflow described above by providing a "wrapper" for the `dtw` and `CausalImpact` packages. Hence, the package does not provide any functionality that cannot be found in these packages, but rather simplifies the workflow by setting up the data and providing output that can easily be extracted for presentations. Summary of features:
+The `MarketMatching` package implements the workflow described above by providing a "wrapper" for the `dtw` and `CausalImpact` packages. R packages are a great way of implementing and documenting workflows.
+
+Hence, the package does not provide any functionality that cannot be found in these packages, but rather simplifies the workflow by setting up the data and providing output that can easily be extracted for presentations. Summary of features:
 
 * Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference) and the dates of the pre-period and post-period.
 * Provides a data.frame with the best $K$ matches for all markets in the input dataset. $K$ can be defined by the user.
-* Outputs all inference results as objects with intutive names (e.g., "AbsoluteEffect" and "RelativeEffect").
+* Outputs all inference results as objects with intuitive names (e.g., "AbsoluteEffect" and "RelativeEffect").
 * Calculates MAPE and Durbin-Watson for the pre-period. Shows how these statistics change when you alter the prior standard error of the local level term.
 * Plots and outputs the actual data for the markets selected during the initial market matching.
 * Plots and outputs actual versus predicted values.
 * Plots the final local level term.
-* Shows the average estimated coefficients for all the markets used in the linear regression component of the state space model.
-
-# How Dynamic Time Warping Works
-Let's say we have two time series denoted by $X=(x_1, \ldots, x_n$)$ and $Z={z_1, \ldots, z_m$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that $M$ and $N$ do not need to be equal, although the `MarketMatching` package only considers cases where $m=n$ and denote the length by $T$. 
-
-In order to calculate the distance between these two time series, the first step is to create the *warping curve* $\phi(t) = (\phi_x(t), \phi_z(t))$. The goal of the warping curve is to remap the *indexes* of the original time series – through the *warping functions* $\phi_x(t)$ and $\phi_z(t)$ – such that the remapped series are as similar as possible, where similarity is defined by
-
-$$ D(X,Z) = \frac{1}{M_{\phi}} \sum_{i=1}^T d(\phi_x(t), \phi_z(t))*m_{\phi}(t). $$
-
-Here $d(\phi_x(t), \phi_z(t))$ is the local distance between the remapped data points and at index $t$, $m_{\phi}(t)$ is the per-step weight and $M_{\phi}$ is an optional normalization constant (ignored by the `MarketMatching` package). 
-
-Thus, the goal is essentially to find the warping curve, $\phi$ such that $D(X,Z)$ is minimized. Standard constraints include:
-
-* Monotonicity: ensures that the ordering of the indexes of the time series are preserved – i.e., $\phi_x(t+1) > \phi_x(t)$.
-* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well-known the Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than 2 weeks d.
-
-The per-step lenghts are defined by the "step pattern" which provides a flexible approach to control the slopes along the warping curve. For more details on this, and everything else related to dynamic time warping in R, see the `dtw` Vignette.
-
-## Example
-To see how this works, consider the following example. We'll use the weather dataset included with the `MarketMatching` package and use the first 10 days from the Copenhagen time series as the test market and San Francisco as the control market (query series).
-
-Note that the code in this example is not needed to run the `MarketMatching` package, the package will set it up for you. This is just to show the details behind the scene.
-
-First, let's look at the warping limits imposed by the Sakoe-Chiba band with $L=2$:
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
-library(MarketMatching)
-library(dtw)
-data(weather, package="MarketMatching")
-
-cph <- subset(weather, Area=="CPH")$Mean_TemperatureF[1:10]
-sfo <- subset(weather, Area=="SFO")$Mean_TemperatureF[1:10]
-cph
-sfo
-
-align <- dtw(cph, sfo, stepPattern=asymmetric, window.type=sakoeChibaWindow, window.size=2, keep=TRUE)
-
-dtwWindow.plot(sakoeChibaWindow, window.size=2, reference=10, query=10)
-```
-This shows that, as expected, the band is a symmetric constraint arond the 45 degree line. 
-
-Next, let's look at the alignment between the two time series. The following code shows the two time series as well as how data points are connected:
-
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
-plot(align,type="two", off=1)
-```
-
-This shows that the two cities are not well aligned naturally (not surprising), and that some reference values are mapped to four different query values (the most allowed).
-
-It also helps to look at the actual cost matrix and the optimal aligment path that leads to the minimal distance.
-
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
-lcm <- align$localCostMatrix
-image(x=1:nrow(lcm),y=1:ncol(lcm),lcm)
-text(row(lcm),col(lcm),label=lcm)
-lines(align$index1,align$index2)
-```
-
-The cells represent The total cost (distance) can be computed by multiplying the distances by their respective weights and then summing up along the optimap path. This yields 195, which is a fairly large number given that the sum of all the elements of the reference series (cph) equals 418. Clearly, these two markets are not good matches.
-
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
-align$distance
-align$distance / sum(cph)
-```
-
-For comparison, the distance between Zurich and Copenhagen is only 44:
-
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
-zrh <- subset(weather, Area=="ZRH")$Mean_TemperatureF[1:10]
-dtw(cph, zrh, stepPattern=asymmetric, window.type=sakoeChibaWindow, window.size=2)$distance
-```
-
-# How Does Intervention Inference Work?
-As mentioned, the `MarketMatching` package uses the `CausalImpact` package written by Kay Brodersen at Google to do the post period inference.
-
-
-
-
-
+* Shows the average estimated coefficients for all the markets used in the linear regression component of the structural time series model.
+* Allows the user to choose how many markets are sent to the slab-and-prior model.
 
 # How to Install
 ```{r, eval=FALSE}
@@ -110,7 +37,7 @@ install_github("klarsen1/MarketMatching", "klarsen1")
 ```
 
 # Example
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 library(MarketMatching)
 ##-----------------------------------------------------------------------
 ## Find the best matches (default is 5) for each airport time series
@@ -136,43 +63,43 @@ results <- MarketMatching::inference(matched_markets = mm,
 ``` 
 
 A view of the best matches data.frame generated by the best_matches() function:
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 knitr::kable(head(mm$BestMatches))
 ```
 
 Plotting the absolute impact
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotAbsoluteEffect
 ```
 
 Plot actual observations for test market (CPH) versus the expectation
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotActualVersusExpected
 ```
 
 Store actual versus predicted in a data.frame
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 pred <- results$Predictions
 knitr::kable(head(pred))
 ```
 
 PLot the actual data for the test and control markets
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotActuals
 ```
 
 Check DW, MAPE and largest market coefficient for different values of the local level SE
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotPriorLevelSdAnalysis
 ```
 
 Store the coefficients in a data.frame
-```{r, echo = TRUE, message=FALSE, eval=TRUE}
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
 coeff <- results$Coefficients
 knitr::kable(head(coeff))
 ```
 
 # References
-CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/
+[1] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/
 
-Vignette for the `dtw` package: https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf.
+[2] Vignette for the `dtw` package: https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf.

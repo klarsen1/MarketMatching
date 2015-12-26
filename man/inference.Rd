@@ -2,13 +2,14 @@
 % Please edit documentation in R/functions.R
 \name{inference}
 \alias{inference}
-\title{Given a test market, analyze the impact of an intervention
-\code{inference} Analyzes the causal impact of an intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
-The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).}
+\title{Given a test market, analyze the impact of an intervention}
 \usage{
-inference(matched_markets = NULL, test_market = NULL,
-  end_post_period = NULL, alpha = 0.05, prior_level_sd = 0.01,
-  control_matches = 5)
+inference(matched_markets=NULL,
+          test_market=NULL,
+          end_post_period=NULL,
+          alpha=0.05,
+          prior_level_sd=0.01,
+          control_matches=5)
 }
 \arguments{
 \item{matched_markets}{A matched_market object created by the market_matching function}
@@ -19,13 +20,42 @@ inference(matched_markets = NULL, test_market = NULL,
 
 \item{alpha}{Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals}
 
-\item{prior_level_sd}{Prior SD for the local level term. Default is 0.01. The biggesr this number is, the more wiggliness is allowed for the local level term.
+\item{prior_level_sd}{Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
 Note that more wiggly local level terms also translate into larger posterior intervals.}
 
 \item{control_matches}{Number of matching control markets to use in the analysis}
 }
+\value{
+Returns an object of type \code{inference}. The object has the
+following elements:
+\item{\code{AbsoluteEffect}}{The estimated absolute effect of the intervention}
+\item{\code{AbsoluteEffectLower}}{The lower limit of the estimated absolute effect of the intervention.
+This is based on the posterior interval of the counterfactual predictions.
+The width of the interval is determined by the \code{alpha} parameter.}
+\item{\code{AbsoluteEffectUpper}}{The upper limit of the estimated absolute effect of the intervention.
+This is based on the posterior interval of the counterfactual predictions.
+The width of the interval is determined by the \code{alpha} parameter.}
+\item{\code{RelativeEffectLower}}{Same as the above, just for relative (percentage) effects}
+\item{\code{RelativeEffectUpper}}{Same as the above, just for relative (percentage) effects}
+\item{\code{TailProb}}{Posterior probability of a non-zero effect}
+\item{\code{PrePeriodMAPE}}{Pre-intervention period MAPE}
+\item{\code{DW}}{Durbin-Watson statistic. Should be close to 2.}
+\item{\code{PlotActualVersusExpected}}{Plot of actual versus expected using \code{ggplot2}}
+\item{\code{PlotAbsoluteEffect}}{Plot of the absolute, cumulative effect using \code{ggplot2}}
+\item{\code{PlotActuals}}{Plot of the actual values for the test and control markets using \code{ggplot2}}
+\item{\code{PlotPriorLevelSdAnalysis}}{Plot of DW and MAPE for different values of the local level SE using \code{ggplot2}}
+\item{\code{PlotLocalLevel}}{Plot of the local level term using \code{ggplot2}}
+\item{\code{TestData}}{A \code{data.frame} with the test market data}
+\item{\code{TestData}}{A \code{data.frame} with the data for the control markets}
+\item{\code{PlotResiduals}}{Plot of the residuals using \code{ggplot2}}
+\item{\code{TestName}}{The name of the test market}
+\item{\code{TestName}}{The name of the control market}
+\item{\code{zooData}}{A \code{zoo} time series object with the test and control data}
+\item{\code{Predictions}}{Actual versus predicted values}
+\item{\code{CausalImpactObject}}{The CausalImpact object created}
+\item{\code{Coefficients}}{The average posterior coefficients}
+}
 \description{
-Given a test market, analyze the impact of an intervention
 \code{inference} Analyzes the causal impact of an intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
 The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 }

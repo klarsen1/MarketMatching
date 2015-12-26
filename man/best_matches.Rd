@@ -2,14 +2,17 @@
 % Please edit documentation in R/functions.R
 \name{best_matches}
 \alias{best_matches}
-\title{For each market, find the best matching control market
-\code{best_matches} finds the best macthing control markets for each market in the dataset.
-The function returns an object of type "market_matching" using dynamic time warping (dtw package).
-The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.}
+\title{For each market, find the best matching control market}
 \usage{
-best_matches(data = NULL, id_variable = NULL, date_variable = NULL,
-  matching_variable = NULL, warping_limit = 2, parallel = TRUE,
-  start_match_period = NULL, end_match_period = NULL, matches = 5)
+best_matches(data=NULL,
+             id_variable=NULL,
+             date_variable=NULL,
+             matching_variable=NULL,
+             warping_limit=2,
+             parallel=TRUE,
+             start_match_period=NULL,
+             end_match_period=NULL,
+             matches=5)
 }
 \arguments{
 \item{data}{input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
@@ -21,7 +24,7 @@ In other words, markets are rows and not columns -- we have a unique row for eac
 
 \item{matching_variable}{the variable (metric) used to match the markets. For example, this could be sales or new customers}
 
-\item{warping_limit}{the warping limit used for matching. Defauls is 2}
+\item{warping_limit}{the warping limit used for matching. Default is 2}
 
 \item{parallel}{set to TRUE for parallel processing. Default is TRUE}
 
@@ -31,13 +34,21 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"}
 \item{end_match_period}{the end date of the matching period (pre period).
 Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 
-\item{matches}{Number of macthing markets to keep in the output}
+\item{matches}{Number of matching markets to keep in the output}
+}
+\value{
+Returns an object of type \code{market_matching}. The object has the
+following elements:
+
+\item{\code{BestMatches}}{A data.frame that contains the best matches for each market in the input dataset}
+\item{\code{Data}}{The raw data used to do the matching}
+\item{\code{MarketID}}{The name of the market identifier}
+\item{\code{MatchingMetric}}{The name of the matching variable}
+\item{\code{DateVariable}}{The name of the date variable}
 }
 \description{
-For each market, find the best matching control market
-\code{best_matches} finds the best macthing control markets for each market in the dataset.
-The function returns an object of type "market_matching" using dynamic time warping (dtw package).
-The element called "BestMatches" is a data.frame that shows the best matching control markets and the relative distances.
+\code{best_matches} finds the best matching control markets for each market in the dataset
+using dynamic time warping (\code{dtw} package).
 }
 \examples{
 ##-----------------------------------------------------------------------
