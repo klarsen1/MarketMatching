@@ -70,10 +70,12 @@ img {
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event.</li>
 </ol>
 <p>For step 1, the most straight-forward approach to this would be to use the Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a “diff in diff” model. However, this assumes are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.</p>
-<p>A better approach is to use <em>dynamic time warping</em> for the time series matching (step 1). This technique finds the distance along the <em>warping curve</em> – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the <code>CausalImpact</code> package created by Kay Brodersen at Google (see [1]). The <code>CausalImpact</code> package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based on a set of plausible control markets.</p>
+<p>A better approach is to use <em>dynamic time warping</em> for the time series matching (step 1). This technique finds the distance along the <em>warping curve</em> – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), a more robust approach is to use the method implemented in the <code>CausalImpact</code> package created by Kay Brodersen at Google (see [1]). The <code>CausalImpact</code> package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based on a set of matching control markets.</p>
 <div id="note-on-the-workflow" class="section level2">
 <h2>Note on the Workflow</h2>
-<p>We don’t really need step 1 to do these type of analyses; the <code>CausalImpact</code> package selects the most predictive markets for the structural time series model using spike-and-slab priors. However, when dealing with a large candidate control markets it is often prudent to trim the list before selecting the final variables. Moreover, basing your synthetic control on markets that have a small distance in the DTW analysis boosts the optical credibility of the analysis.</p>
+<p>We don’t really need the dynamic time warping step to do execute this workflow; we can select markets directly while building the time series model in step 2. In fact, the <code>CausalImpact</code> package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the <code>CausalImpact</code> package without pre-screening the markets.</p>
+<p>However, when dealing with a large set of candidate control markets it is often prudent to trim the list before selecting the final markets and we rarely need more than three markets to create robust synthetic control series. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in “size” and hence be recognized as viable controls.</p>
+<p>Ultimately, this is a matter of preference. The good news is that the <code>MarketMatching</code> package allows users to decide how many control markets should pass the filter in step 1.</p>
 </div>
 </div>
 <div id="about-marketmatching-package" class="section level1">
@@ -90,6 +92,7 @@ img {
 <li>Plots the final local level term.</li>
 <li>Shows the average estimated coefficients for all the markets used in the linear regression component of the structural time series model.</li>
 <li>Allows the user to choose how many markets are sent to the slab-and-prior model.</li>
+<li>All plots are done in <code>ggplot2</code> and can easily be manipulated.</li>
 </ul>
 </div>
 <div id="how-to-install" class="section level1">

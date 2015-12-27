@@ -224,7 +224,7 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' Note that more wiggly local level terms also translate into larger posterior intervals.
 #' @param control_matches Number of matching control markets to use in the analysis
 
-#' @import scales
+#' @importFrom scales comma alpha
 #' @import ggplot2
 #' @import zoo
 

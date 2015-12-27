@@ -15,17 +15,17 @@ If you ever spent time in the field of marketing analytics, chances are that you
 
 An intervention analysis usually involves two steps:
 
-1. Find plausible *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
+1. Find matching *control* markets for the *test* market where the event took place, using time series matching based on data prior to the event (pre period).
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
 
 For step 1, the most straight-forward approach to this would be to use the Euclidian distance or correlation coefficient. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate control market candidates. For step 2, the traditional approach is a "diff in diff" model. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
 
-A better approach is to use *dynamic time warping* for the time series matching (step 1). This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), the most robust approach seems to be the method implemented in the `CausalImpact` package created by Kay Brodersen at Google (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based on a set of plausible control markets. 
+A better approach is to use *dynamic time warping* for the time series matching (step 1). This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis (step 2), a more robust approach is to use the method implemented in the `CausalImpact` package created by Kay Brodersen at Google (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based on a set of matching control markets. 
 
 ## Note on the Workflow
 We don't really need the dynamic time warping step to do execute this workflow; we can select markets directly while building the time series model in step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the `CausalImpact` package without pre-screening the markets. 
 
-However, when dealing with a large set of candidate control markets it is often prudent to trim the list before selecting the final markets and we rarely need more than three markets to create robust synthetic control series. Moreover, basing your synthetic control on markets that have a small distance in the DTW analysis boosts the face-validity of the analysis.  
+However, when dealing with a large set of candidate control markets it is often prudent to trim the list before selecting the final markets and we rarely need more than three markets to create robust synthetic control series. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in "size" and hence be recognized as viable controls.  
 
 Ultimately, this is a matter of preference. The good news is that the `MarketMatching` package allows users to decide how many control markets should pass the filter in step 1.
 
@@ -44,9 +44,10 @@ Hence, the package does not provide any functionality that cannot be found in th
 * Plots the final local level term.
 * Shows the average estimated coefficients for all the markets used in the linear regression component of the structural time series model.
 * Allows the user to choose how many markets are sent to the slab-and-prior model.
+* All plots are done in `ggplot2` and can easily be manipulated.
 
 # How Dynamic Time Warping Works
-Let's say we have two time series denoted by $X=(x_1, \ldots, x_n)$ and $Z=(z_1, \ldots, z_m)$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that $M$ and $N$ do not need to be equal, although the `MarketMatching` package only considers cases where $m=n$ and denote the length by $T$. 
+Let's say we have two time series denoted by $X=(x_1, \ldots, x_n)$ and $Z=(z_1, \ldots, z_m)$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that $m$ and $n$ do not need to be equal, although the `MarketMatching` package only considers cases where $m=n$ and denote the length by $T$. 
 
 In order to calculate the distance between these two time series, the first step is to create the *warping curve* $\phi(t) = (\phi_x(t), \phi_z(t))$. The goal of the warping curve is to remap the *indexes* of the original time series – through the *warping functions* $\phi_x(t)$ and $\phi_z(t)$ – such that the remapped series are as similar as possible, where similarity is defined by
 
@@ -155,8 +156,8 @@ This approach is a powerful way of reducing a large set of correlated markets in
 
 For more details in spike-and-slab priors, see [1].
 
-### Selecting the Local Level SE
-There's no perfectly scientific way of scaling the standard error of the local level term. Using the a goodness-of-fit-based measures is not meaningful as a higher SE will always guarantee a better historical fit and the goal of the model is not to fit the data in the post-intervention period.
+### Selecting the Local Level Standard Error
+There's no perfectly scientific way of choosing the standard error (SE) of the local level term. Using a pure goodness-of-fit-based measures is not meaningful as a higher SE will always guarantee a better historical fit and the goal of the model is not to fit the data in the post-intervention period (i.e., we cannot use the post intervention period as a hold-out sample).
 
 Here are some tips to deciding the standard error:
 
@@ -164,7 +165,7 @@ Here are some tips to deciding the standard error:
 
 * If you know a priori that the series is volatile due to unexplained noise, choose 0.1.
 
-* Try different values of the standard error, and check the MAPE and Durbin-Watson statistic. This shows you the tradeoff between a larger standard errors versus sacrificing MAPE and DW. Note that the DW should be as close to 2 as possible. From here, choose a standard error that is as small as you can tolerate. 
+* Try different values of the standard error, and check the MAPE and Durbin-Watson statistic. The MAPE measures the historical fit and the Durbin-Watson statistic measures the level of autocorrelation in the residuals. This shows you the tradeoff between a larger standard error versus fit and ill-behaved residuals. Note that the Durbin-Watson statistic should be as close to 2 as possible. We want to choose a standard error that is as small as possible in order rely more on the predictive value coming from the control markets, but not at any cost. The `MarketMatching` package produces charts that help make this tradeoff. 
 
 * When you cannot make a decision, choose 0.01.
 
@@ -181,6 +182,10 @@ install_github("klarsen1/MarketMatching", "klarsen1")
 ```
 
 # Example
+The dataset supplied with the package has dailytemperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where reach row represent a unique combination of date and area. It has three columns: Area, date, and the average temperature reading for the day in Fahrenheit.
+
+This is not a great dataset to demonstrate intervention inference as humans cannot affect the weather in the following month or week. Thus, we'll merely use it to demonstrate the features. 
+
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
 library(MarketMatching)
 ##-----------------------------------------------------------------------
