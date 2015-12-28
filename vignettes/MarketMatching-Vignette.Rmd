@@ -2,9 +2,9 @@
 title: "MarketMatching Package Vignette"
 author: "Kim Larsen"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: rmarkdown::pdf_document
 vignette: >
-  %\VignetteIndexEntry{Information Package Vignette}
+  %\VignetteIndexEntry{MarketMatching Vignette}
   %\VignetteEngine{knitr::rmarkdown_notangle}
   %\VignetteEncoding{UTF-8}
   \usepackage[utf8]{inputenc}
