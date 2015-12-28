@@ -1,15 +1,3 @@
----
-title: "MarketMatching Package Vignette"
-author: "Kim Larsen"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Information Package Vignette}
-  %\VignetteEngine{knitr::rmarkdown_notangle}
-  %\VignetteEncoding{UTF-8}
-  \usepackage[utf8]{inputenc}
----
-
 # Market Matching and Causal Impact Inference
 If you ever spent time in the field of marketing analytics, chances are that you have analyzed the causal impact of various events (interventions) using time series techniques. An event in this context could be a new TV or radio campaign, a major PR event, or some external event such as a new local competitor. These are all events where we cannot track the impact at the individual customer level and hence have to analyze the impact from a bird's eye view – i.e., we have to analyze aggregated time series data, typically at the market level (e.g., DMA, state, etc.). Data science may be changing, but this is a use-case that has been around forever and is still very relevant.  
 
@@ -24,7 +12,13 @@ For step 1, the most straight-forward approach to this would be to use the Eucli
 ## A More Flexible Approach
 A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis, `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible than "diff in diff"  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based *multiple* matching control markets. 
 
-## Notes on the Workflow
+Thus, the `MarketMatching` implements the following workflow:
+
+1. Find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. Also, the user can choose whether the market screening should rather be based on correlation or some blend of dynamic time warping and correlation.
+
+2. For a give test market, pass the markets selected in step 1 to the `CausalImpact` package to do the post intervention analysis. `CausalImpact` creates a synthetic control by estimating structural time series model, and then compares the difference between the synthetic control and the test market (for the post-intervention period) to the posterior interval. The number of markets used to create the synthetic control is usually a smaller number than the number of markets passed from step 1 (as selected by spike-and-slab approach). 
+
+### Notes on the Workflow
 The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the `CausalImpact` package without pre-screening the markets. 
 
 However, when dealing with a large set of candidate control markets it is often prudent to trim the list before selecting the final markets and we rarely need more than three markets to create robust synthetic control series. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in "size" and hence be recognized as viable controls.  Ultimately, this is a matter of preference. The good news is that the `MarketMatching` package allows users to decide how many control markets should pass the filter in step 1.
