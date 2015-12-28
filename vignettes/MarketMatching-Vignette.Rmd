@@ -2,7 +2,7 @@
 title: "MarketMatching Package Vignette"
 author: "Kim Larsen"
 date: "`r Sys.Date()`"
-output: rmarkdown::pdf_document
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{MarketMatching Vignette}
   %\VignetteEngine{knitr::rmarkdown_notangle}
@@ -148,8 +148,8 @@ As a result, this approach produces robust counterfactual expectations for the p
 ## Some Technical Details
 When `MarketMatching` calls `CausalImpact` the following structural time series model (state space model) is created for the pre-intervention period:
 
-$$ Y_t = \mu_t + x_t \beta + e_t, e_t ~ N(0, \sigma^2_e) $$
-$$ \mu_{t+1} = \mu_t + \nu_t, \nu_t ~ N(0, \sigma^2_{\nu} $$
+$$ Y_t = \mu_t + x_t \beta + e_t, e_t \sim N(0, \sigma^2_e) $$
+$$ \mu_{t+1} = \mu_t + \nu_t, \nu_t \sim N(0, \sigma^2_{\nu}) $$
 
 Here $x_t$ denote the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and hence is often referred to as the *unobserved trend*. The first equation is The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details. 
 
