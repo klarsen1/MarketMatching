@@ -2,7 +2,7 @@ lagp <- function(x, p){
   return(c(rep(0,p), x[1:(length(x)-p)]))
 }
 
-calculate_distances <- function(all_markets, data, id, i, warping_limit, matches){
+calculate_distances <- function(all_markets, data, id, i, warping_limit, matches, dtw_emphasis){
   row <- 1
   ThisMarket <- all_markets[i]
   distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
@@ -35,10 +35,13 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     row <- row + 1
   }
   distances$matches <- matches
+  distances$w <- dtw_emphasis
   distances <- dplyr::filter(distances, Skip==FALSE) %>%
     dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
-    dplyr::arrange(dist_rank) %>%
-    dplyr::select(-dist_rank, -Skip) %>%
+    dplyr::mutate(corr_rank=rank(-Correlation)) %>%
+    dplyr::mutate(combined_rank=dtw_emphasis*dist_rank+(1-dtw_emphasis)*corr_rank) %>%
+    dplyr::arrange(combined_rank) %>%
+    dplyr::select(-dist_rank, -Skip, -combined_rank) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches)
@@ -114,6 +117,8 @@ dw <- function(y, yhat){
 #' @param end_match_period the end date of the matching period (pre period). 
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output
+#' @param dtw_emphasis The amount of emphasis placed on dtw distances, versus correlation, when ranking markets. 
+#' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #'
 #' @import foreach
 #' @importFrom parallel detectCores 
@@ -160,7 +165,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 
 
-best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=2, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5){
+best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=2, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1){
   
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
