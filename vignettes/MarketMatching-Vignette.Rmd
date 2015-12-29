@@ -33,7 +33,7 @@ Thus, the `MarketMatching` implements the following workflow:
 ### Notes on the Workflow
 The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the `CausalImpact` package without pre-screening the markets. 
 
-However, when dealing with a large set of candidate control markets it is often prudent to trim the list in advance, as opposed to relying solely on the variable selection process. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in "size" and hence be recognized as viable controls.  Ultimately, this is a matter of preference. The good news is that the `MarketMatching` package allows users to decide how many control markets should pass the filter in step 1.
+However, when dealing with a large set of candidate control markets it is often prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in "size" and hence be recognized as viable controls.  Ultimately, this is a matter of preference and the good news is that the `MarketMatching` package allows users to decide how many control markets should pass the filter in step 1.
 
 Last but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the "sizes" of the control markets do not matter as long as they are predictive. Again, this is a matter of preferences. The `MarketMatching` package allows the user to control whether the ranking is correlation-based or dtw-based using the `dtw_emphasis` parameter.   
 
@@ -183,8 +183,6 @@ The `CausalImpact` package can fit much more complicated models with seasonal te
 $$ (1 − B)y_t = (1 − \rho B)a_t, $$
 
 where $B$ is the backshift operator, $\rho$ is the AR(1) coefficient, and $a_t$ are the residuals, can be recast as the structural model with a local level term (the model described above). However, the structural model is more transparent by no operating in a differenced space and its Bayesian nature allows us to control the variance of the local level term and hence reduce the variance of the forecasted posterior values.
-
-## How to Decide the Prior SE for the Level Term
 
 # How to Install
 ```{r, eval=FALSE}
