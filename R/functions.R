@@ -121,8 +121,9 @@ dw <- function(y, yhat){
 #' @param end_match_period the end date of the matching period (pre period). 
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output
-#' @param dtw_emphasis The amount of emphasis placed on dtw distances, versus correlation, when ranking markets. 
+#' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets. 
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
+#' An emphasis of 0.5 would yield equal weighting.
 #'
 #' @import foreach
 #' @importFrom parallel detectCores 
@@ -361,6 +362,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   ## run the inference
   pre.period <- c(as.Date(MatchingStartDate), as.Date(MatchingEndDate))
   post.period <- c(as.Date(post_period_start_date), as.Date(post_period_end_date))
+  set.seed(2015)
   impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=prior_level_sd))
   
   ## estimate betas for different values of prior sd

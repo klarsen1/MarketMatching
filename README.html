@@ -84,7 +84,7 @@ img {
 <div id="notes-on-the-workflow" class="section level3">
 <h3>Notes on the Workflow</h3>
 <p>The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the <code>CausalImpact</code> package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the <code>CausalImpact</code> package without pre-screening the markets.</p>
-<p>However, when dealing with a large set of candidate control markets it is often prudent to trim the list before selecting the final markets and we rarely need more than three markets to create robust synthetic control series. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in “size” and hence be recognized as viable controls. Ultimately, this is a matter of preference. The good news is that the <code>MarketMatching</code> package allows users to decide how many control markets should pass the filter in step 1.</p>
+<p>However, when dealing with a large set of candidate control markets it is often prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in “size” and hence be recognized as viable controls. Ultimately, this is a matter of preference and the good news is that the <code>MarketMatching</code> package allows users to decide how many control markets should pass the filter in step 1.</p>
 <p>Last but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the “sizes” of the control markets do not matter as long as they are predictive. Again, this is a matter of preferences. The <code>MarketMatching</code> package allows the user to control whether the ranking is correlation-based or dtw-based using the <code>dtw_emphasis</code> parameter.</p>
 </div>
 </div>
@@ -110,7 +110,11 @@ img {
 <h1>How to Install</h1>
 <pre class="r"><code>library(devtools)
 install_github(&quot;google/CausalImpact&quot;)
-install_github(&quot;klarsen1/MarketMatching&quot;, &quot;klarsen1&quot;)</code></pre>
+install_github(&quot;klarsen1/MarketMatching&quot;, &quot;klarsen1&quot;, build_vignettes=TRUE)</code></pre>
+</div>
+<div id="to-learn-more-about-this-package" class="section level1">
+<h1>To Learn More About this Package</h1>
+<pre class="r"><code>browseVignettes(&quot;MarketMatching&quot;)</code></pre>
 </div>
 <div id="example" class="section level1">
 <h1>Example</h1>

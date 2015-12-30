@@ -36,8 +36,9 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 
 \item{matches}{Number of matching markets to keep in the output}
 
-\item{dtw_emphasis}{The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
-Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.}
+\item{dtw_emphasis}{Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
+Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
+An emphasis of 0.5 would yield equal weighting.}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the
