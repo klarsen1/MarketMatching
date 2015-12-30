@@ -50,6 +50,7 @@ install_github("klarsen1/MarketMatching", "klarsen1", build_vignettes=TRUE)
 ```
 
 # To Learn More About this Package
+The vignette shows examples and provides a brief overview of the theory. Check out the vignette by using the following command in `R`:
 
 ```{r, eval=FALSE}
 browseVignettes("MarketMatching")
