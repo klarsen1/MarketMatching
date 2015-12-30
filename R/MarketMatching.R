@@ -2,7 +2,9 @@
 #'
 #' @details  
 #' The MarketMatching package can be used to perform the following analyses:
-#' - For all markets in the input dataset, find the best control markets using time series matching
+#' 
+#' - For all markets in the input dataset, find the best control markets using time series matching.
+#' 
 #' - Given a test market and a matching control market (from above), analyze the causal impact of an intervention
 #' 
 #' The package utilizes the dtw package in CRAN to do the time series matching, and the CausalImpact package to do the inference. 
@@ -11,8 +13,12 @@
 #' "CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/
 #' 
 #' The MarketMatching has two separate functions to perform the tasks described above:
-#' - best_matches(): This function is used to find matching controls market for all markets in the input dataset.
+#' 
+#' - best_matches(): This function finds the best matching controls market for all markets in the input dataset.
+#' 
 #' - inference(): Given an object from best_matches(), analyze the causal impact of an intervention (defined by a time window).
+#' 
+#' For more details, check out the vignette: browseVignettes("MarketMatching")
 #' @author Kim Larsen (kblarsen4 at gmail.com)
 #' @keywords time warping, time series matching, causal impact
 #' @docType package
