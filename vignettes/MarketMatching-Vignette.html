@@ -10,7 +10,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2016-01-02" />
+<meta name="date" content="2016-01-03" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -54,7 +54,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">MarketMatching Package Vignette</h1>
 <h4 class="author"><em>Kim Larsen</em></h4>
-<h4 class="date"><em>2016-01-02</em></h4>
+<h4 class="date"><em>2016-01-03</em></h4>
 </div>
 
 
@@ -73,7 +73,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="a-more-flexible-approach" class="section level2">
 <h2>A More Flexible Approach</h2>
 <p>A better approach is to use <em>dynamic time warping</em> for the time series matching step. This technique finds the distance along the <em>warping curve</em> – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis, <code>CausalImpact</code> package created by Kay Brodersen at Google provides an approach that is more flexible than “diff in diff” (see [1]). The <code>CausalImpact</code> package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based <em>multiple</em> matching control markets.</p>
-<p>Thus, the <code>MarketMatching</code> implements the following workflow:</p>
+<p>The <code>MarketMatching</code> implements this workflow in the following way:</p>
 <ol style="list-style-type: decimal">
 <li><p>Find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. Also, the user can choose whether the market screening should rather be based on correlation or some blend of dynamic time warping and correlation.</p></li>
 <li><p>For a give test market, pass the markets selected in step 1 to the <code>CausalImpact</code> package to do the post intervention analysis. <code>CausalImpact</code> creates a synthetic control by fitting a Bayesian structural time series model and producing a counterfactual prediction for the post period. The difference between the synthetic control and the test market (for the post-intervention period) are then comppared to the posterior interval. The number of markets used to create the synthetic control is usually a smaller number than the number of markets passed from step 1 (as selected by spike-and-slab approach).</p></li>

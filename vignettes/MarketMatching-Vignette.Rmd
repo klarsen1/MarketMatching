@@ -24,7 +24,7 @@ For step 1, the most straight-forward approach to this would be to use the Eucli
 ## A More Flexible Approach
 A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis, `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible than "diff in diff"  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based *multiple* matching control markets. 
 
-Thus, the `MarketMatching` implements the following workflow:
+The `MarketMatching` implements this workflow in the following way:
 
 1. Find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. Also, the user can choose whether the market screening should rather be based on correlation or some blend of dynamic time warping and correlation.
 
