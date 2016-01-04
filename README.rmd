@@ -7,10 +7,14 @@ An intervention analysis usually involves two steps:
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (post period), factoring in differences prior to the event. 
 
 ## A Traditional Approach
-For step 1, the most straight-forward approach to this would be to use the Euclidian distance to find the best matching control market. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate good control market candidates. For step 2, the traditional approach is a "diff in diff" model where the difference between the test market and the best matching control market is modeled. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
+For step 1, the most straight-forward approach to this would be to use the Euclidian distance to find the best matching control market. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate good control market candidates. 
 
-## A More Flexible Approach
-A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). For the intervention analysis, `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible than "diff in diff"  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with linear regression components based *multiple* matching control markets. 
+For step 2, the traditional approach is a "diff in diff" model where the difference between the test market and the best matching control market is modeled. However, this assumes  are i.i.d. and that the differences between the test and control markets is constant – assumptions that rarely hold true for time series data.
+
+## A More Flexible and Robust Approach
+A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraint (time window). 
+
+For the intervention analysis, `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible than "diff in diff"  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model with components on based *multiple* matching control markets. 
 
 The `MarketMatching` implements this workflow in the following way:
 
@@ -21,18 +25,18 @@ The `MarketMatching` implements this workflow in the following way:
 ### Notes on the Workflow
 The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the `CausalImpact` package without pre-screening the markets. 
 
-However, when dealing with a large set of candidate control markets it is often prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders. Moreover, basing the synthetic control on markets that have small distances to the test market boosts the face-validity of the analysis as these control markets tend to be similar in "size" and hence be recognized as viable controls.  Ultimately, this is a matter of preference and the good news is that the `MarketMatching` package allows users to decide how many control markets should pass the filter in step 1.
+However, when dealing with a large set of candidate control markets it often turns out to be prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders; you're much less likely to get a strange and indefensible model. Moreover, basing the synthetic control on markets that have small *distances* to the test market boosts the face-validity of the analysis as these control markets will be similar in "size" and hence be recognized as viable controls by your business partners.  Ultimately, however, this is a matter of preference and the good news is that the `MarketMatching` package allows users to decide how many control markets should pass through step 1.
 
-Last but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the "sizes" of the control markets do not matter as long as they are predictive. Again, this is a matter of preferences. The `MarketMatching` package allows the user to control whether the ranking is correlation-based or dtw-based using the `dtw_emphasis` parameter.   
+Last but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the "sizes" of the control markets do not matter as long as they are predictive. Again, this is a matter of preferences and `MarketMatching` allows the user to control whether the ranking is correlation-based or distance-based.   
 
 # About MarketMatching Package
 
-The `MarketMatching` package implements the workflow described above by providing a "wrapper" for the `dtw` and `CausalImpact` packages. R packages are a great way of implementing and documenting workflows.
+The `MarketMatching` package implements the workflow described above by essentially providing a "wrapper" for the `dtw` and `CausalImpact` packages. Hence, the package does *not* provide any functionality that cannot be found in these packages, but rather simplifies the workflow of using `dtw` and `CausalImpact` together and provides charts and data that are easy to manipulate. R packages are simply a great way of implementing and documenting workflows.
 
-Hence, the package does not provide any functionality that cannot be found in these packages, but rather simplifies the workflow by setting up the data and providing output that can easily be extracted for presentations. Summary of features:
+## Summary of features:
 
 * Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference) and the dates of the pre-period and post-period.
-* Provides a data.frame with the best matches for all markets in the input dataset. The numbert of matches can be defined by the user.
+* Provides a data.frame with the best $K$ matches for all markets in the input dataset. $K$ can be defined by the user.
 * Outputs all inference results as objects with intuitive names (e.g., "AbsoluteEffect" and "RelativeEffect").
 * Calculates MAPE and Durbin-Watson for the pre-period. Shows how these statistics change when you alter the prior standard error of the local level term.
 * Plots and outputs the actual data for the markets selected during the initial market matching.
