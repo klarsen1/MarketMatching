@@ -438,7 +438,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   plotdf <- data[data$id_var %in% c(test_market, control_market),]
   results[[12]] <- ggplot(data=plotdf, aes(x=date_var, y=match_var, colour=id_var)) +
     geom_line() +
-    theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("Date") +
+    theme_bw() + theme(legend.title = element_blank(), axis.title.x = element_blank()) + ylab("") + xlab("Date") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     scale_y_continuous(labels = comma, limits=c(ymin, ymax))
 
