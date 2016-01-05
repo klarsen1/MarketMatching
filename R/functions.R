@@ -421,7 +421,6 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) +
     geom_line(aes(y=Predicted, colour = "Expected"), size=1.2) +
     theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") +
-    scale_colour_manual(breaks = c("Observed", "Expected"), values = c("gray", "black")) +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     scale_y_continuous(labels = comma, limits=c(ymin, ymax)) +
     ggtitle(paste0("Test Market: ",test_market))
@@ -430,7 +429,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   ## create lift plots
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("cum.effect", "cum.effect.lower", "cum.effect.upper")])
   names(plotdf) <- c("Date", "Cumulative", "lower_bound", "upper_bound")
-  results[[11]] <- ggplot(data=plotdf, aes(x=Date, y=Cumulative)) + geom_line() + theme_bw() +
+  results[[11]] <- ggplot(data=plotdf, aes(x=Date, y=Cumulative)) + geom_line(size=1.2) + theme_bw() +
     scale_y_continuous(labels = comma) + ylab("Absolute Cumulative Effect") + xlab("") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
@@ -454,7 +453,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   results[[14]] <- ggplot(data=plotdf, aes(x=SD, y=value, colour=variable)) + geom_line() +
     theme_bw() + theme(legend.title = element_blank()) +
     geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD") +
-    facet_grid(variable ~ ., scales="free") + ylab("")
+    facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour=FALSE)
 
   plotdf <- cbind.data.frame(date, impact$model$bsts.model$state.contributions[1000, 1, ]) %>% filter(date<=as.Date(MatchingEndDate))
   names(plotdf) <- c("Date", "LocalLevel")

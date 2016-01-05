@@ -111,16 +111,16 @@ It also helps to look at the actual cost matrix and the optimal alignment path t
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 lcm <- align$localCostMatrix
-image(x=1:nrow(lcm),y=1:ncol(lcm),lcm)
+image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="SFO Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(align$index1,align$index2)
 ```
 
-The cells represent The total cost (distance) can be computed by multiplying the distances by their respective weights and then summing up along the optimal path. This can be illustrated by the cumulative cost matrix:
+The cells represent ??? The total cost (distance) can be computed by multiplying the distances by their respective weights and then summing up along the optimal path. This can be illustrated by the cumulative cost matrix:
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 lcm <- align$costMatrix
-image(x=1:nrow(lcm),y=1:ncol(lcm),lcm)
+image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="SFO Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(align$index1,align$index2)
 ```
@@ -192,7 +192,7 @@ where $B$ is the backshift operator, $\rho$ is the AR(1) coefficient, and $a_t$ 
 ```{r, eval=FALSE}
 library(devtools)
 install_github("google/CausalImpact")
-install_github("klarsen1/MarketMatching", "klarsen1")
+install_github("klarsen1/MarketMatching")
 ```
 
 # Example
@@ -201,7 +201,6 @@ The dataset supplied with the package has daily temperature readings for 20 area
 This is *not* a great dataset to demonstrate intervention inference as humans cannot affect the weather in the short term (long term is a different story). We'll merely use the data to demonstrate the features.
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
-library(MarketMatching)
 ##-----------------------------------------------------------------------
 ## Find the best matches (default is 5) for each airport time series
 ##-----------------------------------------------------------------------
