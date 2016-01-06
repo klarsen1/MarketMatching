@@ -107,7 +107,8 @@ dw <- function(y, yhat){
 #' For each market, find the best matching control market
 #'
 #' \code{best_matches} finds the best matching control markets for each market in the dataset
-#' using dynamic time warping (\code{dtw} package).
+#' using dynamic time warping (\code{dtw} package). The algorithm simply loops through all viable candidates for each
+#' market in a parallel fashion, and then ranks by distance and/or correlation.
 #'
 #' @param data input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
 #' In other words, markets are rows and not columns -- we have a unique row for each area/time combination.
