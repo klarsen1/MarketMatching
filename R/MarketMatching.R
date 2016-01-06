@@ -26,8 +26,10 @@
 #' For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention.
 #' The intervention could be be a marketing event or some other local business tactic that is being tested. 
 #' The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. 
-#' In fact, MarketMatching can be considered a wrapper for those two packages; it provides an easy "interface" to connecting 
-#' and interfacing with CausalImpact and dtw.
+#' In fact, MarketMatching can be considered a wrapper for those two packages. 
+#' MarketMatching does not provide any functionality that cannot be found in these packages 
+#' but simplifies the workflow of using dtw and CausalImpact together 
+#' and provides charts and data that are easy to manipulate.
 #'
 #'
 #' @name MarketMatching
