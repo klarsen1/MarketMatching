@@ -16,7 +16,7 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     test <- mkts[[1]]
     ref <- mkts[[2]]
     dates <- mkts[[3]]
-    if ((var(test)==0 | length(test)<=2*warping_limit) & messages==0){
+    if ((var(test)==0 | length(test)<=2*warping_limit+1) & messages==0){
       print(paste0("NOTE: test market ", ThisMarket, " has insufficient data or no variance and hence will be excluded"))
       messages <- messages + 1
     }
@@ -43,12 +43,12 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
   distances <- dplyr::filter(distances, Skip==FALSE) %>%
     dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
-    dplyr::mutate(combined_rank=dtw_emphasis*dist_rank+(1-dtw_emphasis)*corr_rank) %>%
+    dplyr::mutate(combined_rank=w*dist_rank+(1-w)*corr_rank) %>%
     dplyr::arrange(combined_rank) %>%
     dplyr::select(-dist_rank, -Skip, -combined_rank) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
-    dplyr::select(-matches)
+    dplyr::select(-matches, w)
 
   distances$MatchingStartDate <- min(dates)
   distances$MatchingEndDate <- max(dates)

@@ -125,9 +125,13 @@ image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="SFO Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(align$index1,align$index2)
 ```
-Note that with the default step pattern diagonal steps are weighted by a factor of 2 while the other steps receive a weight of 1. This means that a two-step "detour" will cost as much as a direct, diagonal step – assuming all local distances are equal. Thus, this step pattern allows for as much stretching of the warping curve as possible (as long as it is within the specified band). In this specific case, this means that we can match a single element of the query index (CPH) to as much as four points of the reference index (ZRH). If we want to enforce a more diagonal path, we can specify `StepPattern=symmetric1` in the `dtw` call. For a deeper explanation of how step patterns work, see [2].
+The weights are determined by the step pattern used. Note that with the default step pattern diagonal steps are weighted by a factor of 2 while the other steps receive a weight of 1. This means that a two-step "detour" will cost as much as a direct, diagonal step (if all local distances are equal). Thus, this step pattern allows for as much stretching of the warping curve as possible within the specified band (see [2]). In this specific case, this means that we can match a single element of the query index (CPH) to as much as four points of the reference index (ZRH). The `dtw` package provides an easy way to visualize the step pattern used:
 
-The distance equals 195, which is a fairly large number given that the distance between Zurich and Copenhagen is only 44:
+```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
+plot(align$stepPattern)
+```
+
+Returning our focus to the cumulative distance matrix above, we see that the total distance equals 195. This is a large number given that the total distance between Zurich and Copenhagen is 44:
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 zrh <- subset(weather, Area=="ZRH")$Mean_TemperatureF[1:10]
@@ -177,7 +181,7 @@ There's no perfectly scientific way of choosing the standard error (SE) of the l
 
 Here are some tips to deciding the standard error:
 
-* Note that larger values of the standard error leads to wider posterior forecast intervals and hence inconclusive results. Thus, choosing a large value "to be safe" is not always a prudent choice.
+* Note that larger values of the standard error leads to wider posterior forecast intervals and hence results are more likely to be inconclusive. Thus, choosing a large value "to be safe" is not always a prudent choice.
 
 * If you know a priori that the series is volatile due to unexplained noise, choose 0.1.
 
@@ -200,9 +204,9 @@ install_github("klarsen1/MarketMatching")
 ```
 
 # Example
-The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where reach row represent a unique combination of date and area. It has three columns: Area, date, and the average temperature reading for the day in Fahrenheit.
+The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where reach row represent a unique combination of date and area. It has three columns: Area, date, and the average temperature reading for the day.
 
-This is *not* a great dataset to demonstrate intervention inference as humans cannot affect the weather in the short term (long term is a different story). We'll merely use the data to demonstrate the features.
+This is *not* the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term is a different blog post). We'll merely use the data to demonstrate the features.
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
 ##-----------------------------------------------------------------------
