@@ -235,8 +235,8 @@ mm &lt;-<span class="st"> </span><span class="kw">best_matches</span>(<span clas
                    <span class="dt">end_match_period=</span><span class="st">&quot;2014-10-01&quot;</span>)
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
-## Since this is weather data this is a meaningless example and we should
-## expect no causal impact. This is just to demo the function.
+## Since this is weather data it is a not a very meaningful example. We'll 
+## just use it to demonstrate the function.
 ##-----------------------------------------------------------------------
 <span class="kw">library</span>(CausalImpact)
 results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference</span>(<span class="dt">matched_markets =</span> mm,
@@ -284,7 +284,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <th align="right">RelativeDistance</th>
 <th align="right">Correlation</th>
 <th align="right">Length</th>
-<th align="right">corr_rank</th>
 <th align="right">rank</th>
 <th align="left">MatchingStartDate</th>
 <th align="left">MatchingEndDate</th>
@@ -297,7 +296,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <td align="right">0.1281864</td>
 <td align="right">0.8520291</td>
 <td align="right">274</td>
-<td align="right">6</td>
 <td align="right">1</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
@@ -308,7 +306,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <td align="right">0.1329590</td>
 <td align="right">0.8334468</td>
 <td align="right">274</td>
-<td align="right">8</td>
 <td align="right">2</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
@@ -319,7 +316,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <td align="right">0.1356541</td>
 <td align="right">0.8142158</td>
 <td align="right">274</td>
-<td align="right">10</td>
 <td align="right">3</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
@@ -330,7 +326,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <td align="right">0.1546884</td>
 <td align="right">0.8755064</td>
 <td align="right">274</td>
-<td align="right">3</td>
 <td align="right">4</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
@@ -341,7 +336,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <td align="right">0.1755755</td>
 <td align="right">0.9377601</td>
 <td align="right">274</td>
-<td align="right">1</td>
 <td align="right">5</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
@@ -352,7 +346,6 @@ results &lt;-<span class="st"> </span>MarketMatching::<span class="kw">inference
 <td align="right">0.0599801</td>
 <td align="right">0.5964474</td>
 <td align="right">274</td>
-<td align="right">1</td>
 <td align="right">1</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>

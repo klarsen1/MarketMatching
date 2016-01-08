@@ -1,26 +1,26 @@
 # Market Matching and Causal Impact Inference
-If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor. For these types of events we cannot track the business impact at the individual customer level; we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace, but this is a use-case that has been around forever and is still very relevant.
+If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.
 
 An intervention analysis usually involves two steps:
 
-1. Find matching *control* markets for the *test* market where the event took place, using time series matching based on history prior to the event (the "pre period"").
-2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period""), while factoring in differences prior to the event.
+1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period"").
+2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period""), while factoring in differences between the markets prior to the event.
 
 ## A Traditional Approach
-For the first step, the most straight-forward approach is to use the Euclidian distance to find a matching control market. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
+For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
 
-For the second step, the traditional approach is a "diff in diff" model where the difference between the test market and the control market is modeled. However, this assumes that observations are i.i.d. and that the historical difference between the test and control market is constant – assumptions that rarely hold true for time series data.
+For the second step, the traditional approach is a "diff in diff" analysis. This is typically a static regression model that evaluates the change in the difference between the test and control markets before and after the event. However, this assumes that observations are i.i.d. and that the differences between the test and control markets, before and after the event, are constant. Both assumptions rarely hold true for time series data.
 
 ## A More Flexible and Robust Approach
-A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraints.
+A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraints. Note that the Euclidian distance is a special case of the warped distance.
 
-For the intervention analysis, the `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible and robust than the "diff in diff" model  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a structural time series model that leverages *multiple* matching control markets as predictors.
+For the intervention analysis the `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible and robust than the "diff in diff" model  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a Bayesian structural time series model that leverages *multiple* matching control markets as predictors as well as other features of the time series.
 
-In summary, a more flexible and robust workflow looks like this:
+We can summarize this workflow as follows:
 
-1. Find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. Also, the user can choose whether the market screening should rather be based on correlation or some blend of dynamic time warping and correlation.
+1. Find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. 
 
-2. For a give test market, pass the markets selected in step 1 to the `CausalImpact` package to do the post intervention analysis. `CausalImpact` creates a synthetic control by fitting a Bayesian structural time series model and producing a counterfactual prediction for the post period. The difference between the synthetic control and the test market (for the post-intervention period) are then comppared to the posterior interval. The number of markets used to create the synthetic control is usually a smaller number than the number of markets passed from step 1.
+2. Fit a Bayesian structural time series model that leverages the control markets identified in step 1. Based on this model, create a synthetic control series by producing a counterfactual prediction for the post period assuming that the event did not take place. Then calculate the difference between the synthetic control and the test market for the post-intervention period – which is the estimated impact of the event – and compare to the posterior interval to gauge uncertainty. 
 
 ### Notes on the Workflow
 The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the `CausalImpact` package without pre-screening the markets.
@@ -31,11 +31,13 @@ Last but not least, one can argue that the initial screening should be correlati
 
 # About MarketMatching Package
 
-The `MarketMatching` package implements the workflow described above by essentially providing an easy-to-use "wrapper" for the `dtw` and `CausalImpact`. Hence, the package does *not* provide any functionality that cannot be found in these packages but it simplifies the workflow of using `dtw` and `CausalImpact` together *and* provides charts and data that are easy to manipulate. R packages are simply a great way of implementing and documenting workflows.
+The `MarketMatching` package implements the workflow described above by essentially providing an easy-to-use "wrapper" for the `dtw` and `CausalImpact`. The function `best_matches()` finds the best control markets for each market by looping through all viable candidates in a parallel fashion and then ranking by distance and/or correlation. The resulting output object can then be passed to the `inference()` function which then analyzes the causal impact of an event using the control markets identified by `best_matches()`. 
+
+Hence, the package does *not* provide any core functionality that cannot be found in these packages but it simplifies the workflow of using `dtw` and `CausalImpact` together *and* provides charts and data that are easy to manipulate. R packages are simply a great way of implementing and documenting workflows.
 
 ## Summary of features:
 
-* Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference) and the dates of the pre-period and post-period.
+* Minimal inputs required. The only strictly necessary inputs are the name of the test market (for inference), the dates of the pre-period and post-period and, of course, the data.
 * Provides a data.frame with the best matches for all markets in the input dataset. The number of matches can be defined by the user.
 * Outputs all inference results as objects with intuitive names (e.g., "AbsoluteEffect" and "RelativeEffect").
 * Checks the quality of the input data and eliminates "bad" markets.
@@ -79,8 +81,8 @@ mm <- best_matches(data=weather,
                    end_match_period="2014-10-01")
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
-## Since this is weather data this is a meaningless example and we should 
-## expect no causal impact. This is just to demo the function.
+## Since this is weather data it is a not a very meaningful example. We'll 
+## just use it to demonstrate the function.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
 results <- MarketMatching::inference(matched_markets = mm, 
@@ -93,33 +95,33 @@ A view of the best matches data.frame generated by the best_matches() function:
 knitr::kable(head(mm$BestMatches))
 ```
 
-Plotting the absolute impact
+Plotting the cumulative impact:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotCumulativeEffect
 ```
 
-Plot actual observations for test market (CPH) versus the expectation
+Plot actual observations for test market (CPH) versus the expectation:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotActualVersusExpected
 ```
 
-Store actual versus predicted in a data.frame
+Store actual versus predicted values in a data.frame:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 pred <- results$Predictions
 knitr::kable(head(pred))
 ```
 
-PLot the actual data for the test and control markets
+PLot the actual data for the test and control markets:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotActuals
 ```
 
-Check DW, MAPE and largest market coefficient for different values of the local level SE
+Check DW, MAPE and largest market coefficient for different values of the local level SE:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 results$PlotPriorLevelSdAnalysis
 ```
 
-Store the coefficients in a data.frame
+Store the coefficients in a data.frame:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 coeff <- results$Coefficients
 knitr::kable(head(coeff))
