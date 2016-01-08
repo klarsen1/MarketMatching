@@ -45,7 +45,7 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
     dplyr::mutate(combined_rank=w*dist_rank+(1-w)*corr_rank) %>%
     dplyr::arrange(combined_rank) %>%
-    dplyr::select(-dist_rank, -Skip, -combined_rank) %>%
+    dplyr::select(-dist_rank, -Skip, -combined_rank, -corr_rank) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w)
