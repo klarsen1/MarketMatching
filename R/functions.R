@@ -48,7 +48,7 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     dplyr::select(-dist_rank, -Skip, -combined_rank) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
-    dplyr::select(-matches, w)
+    dplyr::select(-matches, -w)
 
   distances$MatchingStartDate <- min(dates)
   distances$MatchingEndDate <- max(dates)
