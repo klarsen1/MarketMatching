@@ -19,7 +19,7 @@ An intervention analysis usually involves two steps:
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period""), while factoring in differences between the markets prior to the event.
 
 ## A Traditional Approach
-For the first step, the most straight-forward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
+For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
 
 For the second step, the traditional approach is a "diff in diff" analysis. This is typically a static regression model that evaluates the change in the difference between the test and control markets before and after the event. However, this assumes that observations are i.i.d. and that the differences between the test and control markets, before and after the event, are constant. Both assumptions rarely hold true for time series data.
 
@@ -73,12 +73,12 @@ Here $d(\phi_x(t), \phi_z(t))$ is the local distance between the remapped data p
 Thus, the goal is essentially to find the warping curve, $\phi$ such that $D(X,Z)$ is minimized. Standard constraints for this optimization problem include:
 
 * Monotonicity: ensures that the ordering of the indexes of the time series are preserved – i.e., $\phi_x(t+1) > \phi_x(t)$.
-* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well-known the Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than four weeks.
+* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well known the Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than four weeks.
 
 ## Example
 To see how this works, consider the following example. We'll use the weather dataset included with the `MarketMatching` package and use the first 10 days from the Copenhagen time series as the test market and San Francisco as the control market (query series).
 
-Note that the code in this example is *not* needed to run the `MarketMatching` package, the package will set it up for you. This is just to demonstrate the details behind the scene.
+Note that the code in this example is *not* needed to run the `MarketMatching` package, the package will set it up for you. This is simply to demonstrate the details behind the scene.
 
 First, let's look at the warping limits imposed by the Sakoe-Chiba band with $L=2$:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
@@ -125,7 +125,7 @@ image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="SFO Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(align$index1,align$index2)
 ```
-Note that with the default step pattern, diagonal steps are weighted by a factor of 2 while other steps are multiplied by 1. This means that a two-step "detour" will cost as much as a direct, diagonal step – assuming all local distances are equal. Thus, this step pattern allows for as much stretching of the warping curve as possible (as long as it is within the the band). In this specific case, this means that we can match a single element of the query index (CPH) to as much as four points of the reference index (ZRH). If we want to enforce a more diagonal path, we can specify `StepPattern=symmetric1` in the `dtw` call. For a deeper explanation of how step patterns work, see [2].
+Note that with the default step pattern diagonal steps are weighted by a factor of 2 while the other steps receive a weight of 1. This means that a two-step "detour" will cost as much as a direct, diagonal step – assuming all local distances are equal. Thus, this step pattern allows for as much stretching of the warping curve as possible (as long as it is within the specified band). In this specific case, this means that we can match a single element of the query index (CPH) to as much as four points of the reference index (ZRH). If we want to enforce a more diagonal path, we can specify `StepPattern=symmetric1` in the `dtw` call. For a deeper explanation of how step patterns work, see [2].
 
 The distance equals 195, which is a fairly large number given that the distance between Zurich and Copenhagen is only 44:
 
@@ -149,7 +149,7 @@ Here is how it works at a high level:
 
 3. In a pure Bayesian fashion, leverage the counterfactual predictions to quantify the causal impact of the intervention.
 
-This approach has a number of benefits over the "diff in diff" approach: First, using a structural time series model allows us to capture for latent evolutions of the test market that cannot be explained by known trends or events. Second, estimating control markets effects with Bayesian priors captures the uncertainty of the relationship between the test market and the control markets. This is critical as it ensures that the counterfactual predictions are not rigidly relying on historical relationships between the test and control markets that may be carry large standard errors. Moreover the spike-and-slab priors help avoid overfitting by promoting a sparsity during market (variable) selection.
+This approach has a number of benefits over the "diff in diff" approach: First, using a structural time series model allows us to capture for latent evolutions of the test market that cannot be explained by known trends or events. Second, estimating control markets effects with Bayesian priors captures the uncertainty of the relationship between the test market and the control markets. This is critical as it ensures that the counterfactual predictions are not rigidly relying on historical relationships between the test and control markets that may be carry large standard errors. Moreover the spike-and-slab priors help avoid over fitting by promoting a sparseness during market (variable) selection.
 
 As a result, this approach produces robust counterfactual expectations for the post period that factors in uncertainties in historical market relationships as well as unobserved trends. Moreover, we can calculate posterior intervals through sampling to gauge confidence in the magnitude of causal impact and estimate the posterior probability that the causal impact is non-existent. The "diff in diff" approach does not provide this level of flexibility and does not handle parameter-uncertainty nearly as well.
 
@@ -159,7 +159,7 @@ When `MarketMatching` calls `CausalImpact` the following structural time series 
 $$ Y_t = \mu_t + x_t \beta + e_t, e_t \sim N(0, \sigma^2_e) $$
 $$ \mu_{t+1} = \mu_t + \nu_t, \nu_t \sim N(0, \sigma^2_{\nu}) $$
 
-Here $x_t$ denote the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and hence is often referred to as the *unobserved trend*. The first equation is The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details.
+Here $x_t$ denote the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and hence is often referred to as the *unobserved trend*. The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details.
 
 Once this model is in place, we can create a synthetic control series by predicting the values for the post period, and compare to the actual values. In order to gauge believability of the difference between the control series and the observed values, posterior intervals can be created through sampling in a pure Bayesian fashion. We can also compute the tail probability of a non-zero impact. The `CausalImpact` package conveniently calculates the posterior inference for us.
 
@@ -168,7 +168,7 @@ The `CausalImpact` package applies spike-and-slab priors to the coefficients of 
 
 The spike part governs a market's probability of being chosen for the model (i.e., having a non-zero coefficient). This is typically a product of independent Bernoulli distributions (one for each variable), where the parameters (probability of getting chosen) can be set according to the expected model size. The slab part is a wide-variance Gaussian prior that shrinks the non-zero coefficients toward some value (usually zero).
 
-This approach is a powerful way of reducing a large set of correlated markets into a parsimonious model that averages of a smaller set of markets. Moreover, since the the market coefficients follow random distributions, we can incorporate the uncertainties of the historical relationships into the model as opposed to relying on a rigid encoding based on fixed coefficients when forecasting.
+This approach is a powerful way of reducing a large set of correlated markets into a parsimonious model that averages of a smaller set of markets. Moreover, since the market coefficients follow random distributions, we can incorporate the uncertainties of the historical relationships into the model as opposed to relying on a rigid encoding based on fixed coefficients when forecasting.
 
 For more details in spike-and-slab priors, see [1].
 
@@ -238,12 +238,12 @@ Plot actual observations for test market (CPH) versus the expectation. It looks 
 results$PlotActualVersusExpected
 ```
 
-Plot the cumulative impact. The posterior interval includes zero as expected, which means that the deviation is likely noise:
+Plot the cumulative impact. The posterior interval includes zero as expected, which means that the cumulative deviation is likely noise:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 results$PlotCumulativeEffect
 ```
 
-Although some of the dips in the *pointwise* effects toward the end of the post period seem to be truly negative:
+Although it looks like some of the dips in the *pointwise* effects toward the end of the post period seem to be truly negative:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 results$PlotPointEffect
 ```
@@ -276,3 +276,4 @@ knitr::kable(head(coeff))
 [2] Vignette for the `dtw` package: https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf.
 
 [3] Predicting the Present with Bayesian Structural Time Series, Steven L. Scott and Hal Varian, http://people.ischool.berkeley.edu/~hal/Papers/2013/pred-present-with-bsts.pdf.
+
