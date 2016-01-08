@@ -125,12 +125,6 @@ image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="SFO Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(align$index1,align$index2)
 ```
-The weights that are applied to the local distances are determined by the step pattern used. When the default step pattern is chosen diagonal steps are weighted by a factor of 2 while other steps receive a weight of 1. This means that a two-step "detour" will cost as much as a direct diagonal step (if all local distances are equal). Thus, this step pattern allows for as much stretching of the warping curve as possible within the specified band (see [2]). For example, in this specific case, we can match a single element of the query index (CPH) to as much as four points of the reference index (ZRH). The `dtw` package provides an easy way to visualize the step pattern:
-
-```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
-plot(align$stepPattern)
-```
-
 The cumulative distance matrix above shows that minimum (weighted) cumulative distance between Copenhagen and San Francisco equals 195. This is a large number considering that the distance between Zurich and Copenhagen is 44:
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
@@ -142,6 +136,14 @@ image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="ZRH Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(match$index1,match$index2)
 ```
+
+Note that the weights that are applied to the local distances are determined by the *step pattern* used. When the default step pattern is chosen, diagonal steps are weighted by a factor of 2 while other steps receive a weight of 1. We can visualize this by using the `plot` function provided by the `dtw` package:
+
+```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
+plot(align$stepPattern)
+```
+
+With this step pattern a two-step "detour" will cost as much as a direct diagonal step (if all local distances are equal). Thus, this step pattern essentially allows for as much stretching of the warping curve as possible within the specified band (see [2]). For example, in this specific case, we can match a single element of the query index (CPH) to as many as four points of the reference index (ZRH). 
 
 # How Does Intervention Inference Work?
 As mentioned, the `MarketMatching` package utilizes the `CausalImpact` package written by Kay Brodersen at Google (see [1]) to do the post period inference. 
