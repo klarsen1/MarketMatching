@@ -41,7 +41,8 @@ The width of the interval is determined by the \code{alpha} parameter.}
 \item{\code{PrePeriodMAPE}}{Pre-intervention period MAPE}
 \item{\code{DW}}{Durbin-Watson statistic. Should be close to 2.}
 \item{\code{PlotActualVersusExpected}}{Plot of actual versus expected using \code{ggplot2}}
-\item{\code{PlotAbsoluteEffect}}{Plot of the absolute, cumulative effect using \code{ggplot2}}
+\item{\code{PlotCumulativeEffect}}{Plot of the cumulative effect using \code{ggplot2}}
+\item{\code{PlotPointEffect}}{Plot of the pointwise effect using \code{ggplot2}}
 \item{\code{PlotActuals}}{Plot of the actual values for the test and control markets using \code{ggplot2}}
 \item{\code{PlotPriorLevelSdAnalysis}}{Plot of DW and MAPE for different values of the local level SE using \code{ggplot2}}
 \item{\code{PlotLocalLevel}}{Plot of the local level term using \code{ggplot2}}

@@ -291,7 +291,8 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' \item{\code{PrePeriodMAPE}}{Pre-intervention period MAPE}
 #' \item{\code{DW}}{Durbin-Watson statistic. Should be close to 2.}
 #' \item{\code{PlotActualVersusExpected}}{Plot of actual versus expected using \code{ggplot2}}
-#' \item{\code{PlotAbsoluteEffect}}{Plot of the absolute, cumulative effect using \code{ggplot2}}
+#' \item{\code{PlotCumulativeEffect}}{Plot of the cumulative effect using \code{ggplot2}}
+#' \item{\code{PlotPointEffect}}{Plot of the pointwise effect using \code{ggplot2}}
 #' \item{\code{PlotActuals}}{Plot of the actual values for the test and control markets using \code{ggplot2}}
 #' \item{\code{PlotPriorLevelSdAnalysis}}{Plot of DW and MAPE for different values of the local level SE using \code{ggplot2}}
 #' \item{\code{PlotLocalLevel}}{Plot of the local level term using \code{ggplot2}}
@@ -427,11 +428,11 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     ggtitle(paste0("Test Market: ",test_market))
   avp$test_market <- NULL
 
-  ## create lift plots
+  ## create cumulative lift plots
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("cum.effect", "cum.effect.lower", "cum.effect.upper")])
   names(plotdf) <- c("Date", "Cumulative", "lower_bound", "upper_bound")
   results[[11]] <- ggplot(data=plotdf, aes(x=Date, y=Cumulative)) + geom_line(size=1.2) + theme_bw() +
-    scale_y_continuous(labels = comma) + ylab("Absolute Cumulative Effect") + xlab("") +
+    scale_y_continuous(labels = comma) + ylab("Cumulative Effect") + xlab("") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
 
@@ -471,6 +472,14 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     theme_bw() + theme(legend.title = element_blank()) +
     xlab("")
 
+  ## create cumulative lift plots
+  plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("point.effect", "point.effect.lower", "point.effect.upper")])
+  names(plotdf) <- c("Date", "Pointwise", "lower_bound", "upper_bound")
+  results[[17]] <- ggplot(data=plotdf, aes(x=Date, y=Pointwise)) + geom_line(size=1.2) + theme_bw() +
+    scale_y_continuous(labels = comma) + ylab("Point Effect") + xlab("") +
+    geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
+    geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
+  
   ### print results
   cat("\t------------- Effect Analysis -------------\n")
   cat(paste0("\tAbsolute Effect: ", round(results[[1]],2), " [", round(results[[2]],2), ", ", round(results[[3]],2), "]\n"))
@@ -481,7 +490,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   object <- list(AbsoluteEffect=results[[1]], AbsoluteEffectLower=results[[2]], AbsoluteEffectUpper=results[[3]],
                  RelativeEffect=results[[4]], RelativeEffectLower=results[[5]], RelativeEffectUpper=results[[6]],
                  TailProb=results[[7]], PrePeriodMAPE=results[[8]], DW=results[[9]],
-                 PlotActualVersusExpected=results[[10]], PlotAbsoluteEffect=results[[11]],
+                 PlotActualVersusExpected=results[[10]], PlotCumulativeEffect=results[[11]], PlotPointEffect=results[[17]],
                  PlotActuals=results[[12]], PlotPriorLevelSdAnalysis=results[[14]],
                  PlotLocalLevel=results[[15]], TestData=y, ControlData=ref, PlotResiduals=results[[16]],
                  TestName=test_market, ControlName=control_market, ZooData=ts, Predictions=avp,

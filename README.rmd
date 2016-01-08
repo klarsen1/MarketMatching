@@ -95,7 +95,7 @@ knitr::kable(head(mm$BestMatches))
 
 Plotting the absolute impact
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
-results$PlotAbsoluteEffect
+results$PlotCumulativeEffect
 ```
 
 Plot actual observations for test market (CPH) versus the expectation

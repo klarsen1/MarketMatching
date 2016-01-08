@@ -24,7 +24,7 @@ For the first step, the most straight-forward approach is to use the Euclidian d
 For the second step, the traditional approach is a "diff in diff" analysis. This is typically a static regression model that evaluates the change in the difference between the test and control markets before and after the event. However, this assumes that observations are i.i.d. and that the differences between the test and control markets, before and after the event, are constant. Both assumptions rarely hold true for time series data.
 
 ## A More Flexible and Robust Approach
-A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraints. The Euclidian distance is a special case of the warped distance.
+A better approach is to use *dynamic time warping* for the time series matching step. This technique finds the distance along the *warping curve* – instead of the raw data – where the warping curve represents the best alignment between two time series within some user-defined constraints. Note that the Euclidian distance is a special case of the warped distance.
 
 For the intervention analysis the `CausalImpact` package created by Kay Brodersen at Google provides an approach that is more flexible and robust than the "diff in diff" model  (see [1]). The `CausalImpact` package constructs a synthetic baseline for the post-intervention period based on a Bayesian structural time series model that leverages *multiple* matching control markets as predictors as well as other features of the time series.
 
@@ -238,9 +238,14 @@ Plot actual observations for test market (CPH) versus the expectation. It looks 
 results$PlotActualVersusExpected
 ```
 
-Plot the absolute impact. The posterior interval includes zero as expected, which means that the deviation is likely noise. There was no unusual weather event in Copenhagen:
+Plot the cumulative impact. The posterior interval includes zero as expected, which means that the deviation is likely noise:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
-results$PlotAbsoluteEffect
+results$PlotCumulativeEffect
+```
+
+Although some of the dips in the *pointwise* effects toward the end of the post period seem to be truly negative:
+```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
+results$PlotPointEffect
 ```
 
 Store the actual versus predicted values in a data.frame:

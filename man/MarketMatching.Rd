@@ -9,7 +9,10 @@
 For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention.
 The intervention could be be a marketing event or some other local business tactic that is being tested.
 The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact.
-In fact, this package can be considered a wrapper for those two packages.
+In fact, MarketMatching can be considered a wrapper for those two packages.
+MarketMatching does not provide any functionality that cannot be found in these packages
+but simplifies the workflow of using dtw and CausalImpact together
+and provides charts and data that are easy to manipulate.
 }
 \details{
 The MarketMatching package can be used to perform the following analyses:
@@ -21,13 +24,13 @@ The MarketMatching package can be used to perform the following analyses:
 The package utilizes the dtw package in CRAN to do the time series matching, and the CausalImpact package to do the inference.
 (Created by Kay Brodersen at Google). For more information about the CausualImpact package, see the following reference:
 
-"CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/
+CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/
 
 The MarketMatching has two separate functions to perform the tasks described above:
 
-- best_matches(): This function finds the best matching controls market for all markets in the input dataset.
+- best_matches(): This function finds the best matching control markets for all markets in the input dataset.
 
-- inference(): Given an object from best_matches(), analyze the causal impact of an intervention (defined by a time window).
+- inference(): Given an object from best_matches(), this function analyzes the causal impact of an intervention.
 
 For more details, check out the vignette: browseVignettes("MarketMatching")
 }
