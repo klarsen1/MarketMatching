@@ -270,7 +270,7 @@ Check DW, MAPE and largest market coefficient for different values of the local 
 results$PlotPriorLevelSdAnalysis
 ```
 
-Store the coefficients in a data.frame. STR (Stuttgart) receives the highest weight when predicting the weather in Copenhagen:
+Store the average posterior coefficients in a data.frame. STR (Stuttgart) receives the highest weight when predicting the weather in Copenhagen:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, results='asis'}
 coeff <- results$Coefficients
 knitr::kable(head(coeff))

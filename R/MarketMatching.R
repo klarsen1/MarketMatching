@@ -50,8 +50,8 @@
 #' 
 #' ##-----------------------------------------------------------------------
 #' ## Analyze causal impact of a made-up weather intervention in Copenhagen
-#' ## Since this is weather data this is a meaningless example and we should 
-#' ## expect no causal impact. This is just to demo the function.
+#' ## Since this is weather data it is a not a very meaningful example. We'll 
+#' ## just use it to demonstrate the function.
 #' ##-----------------------------------------------------------------------
 #' library(CausalImpact)
 #' results <- MarketMatching::inference(matched_markets = mm, 
