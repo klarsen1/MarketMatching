@@ -13,10 +13,12 @@ vignette: >
 # Market Matching and Causal Impact Inference
 If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.
 
-An intervention analysis usually involves two steps:
+Intervention analyses require more judgement than evaluation of clinical test/control studies. When analyzing interventions through time series analysis we typically we go through two steps, each of which can involve multiple decisions:
 
 1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period"").
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period""), while factoring in differences between the markets prior to the event.
+
+The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a package that implements the workflow. 
 
 ## A Traditional Approach
 For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
@@ -61,7 +63,7 @@ Hence, the package does *not* provide any core functionality that cannot be foun
 * Allows the user to choose how many markets are sent to the slab-and-prior model.
 * All plots are done in `ggplot2` and can easily be extracted and manipulated.
 
-# How Dynamic Time Warping Works
+# How Does Dynamic Time Warping Work?
 Let's say we have two time series denoted by $X=(x_1, \ldots, x_n)$ and $Z=(z_1, \ldots, z_m)$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that, although $m$ and $n$ do not need to be equal, `MarketMatching` forces $m=n$. We'll denote the common length by $T$.
 
 In order to calculate the distance between these two time series, the first step is to create the *warping curve* $\phi(t) = (\phi_x(t), \phi_z(t))$. The goal of the warping curve is to remap the *indexes* of the original time series – through the *warping functions* $\phi_x(t)$ and $\phi_z(t)$ – such that the remapped series are as similar as possible, where similarity is defined by
@@ -155,7 +157,7 @@ Here is how it works at a high level:
 
 3. In a pure Bayesian fashion, leverage the counterfactual predictions to quantify the causal impact of the intervention.
 
-This approach has a number of benefits over the "diff in diff" approach: First, using a structural time series model allows us to capture for latent evolutions of the test market that cannot be explained by known trends or events. Second, estimating control markets effects with Bayesian priors captures the uncertainty of the relationship between the test market and the control markets. This is critical as it ensures that the counterfactual predictions are not rigidly relying on historical relationships between the test and control markets that may be carry large standard errors. Moreover the spike-and-slab priors help avoid over fitting by promoting a sparseness during market (variable) selection.
+This approach has a number of benefits over the "diff in diff" approach: first, using a structural time series model allows us to capture for latent evolutions of the test market that cannot be explained by known trends or events. Second, estimating control markets effects with Bayesian priors captures the uncertainty of the relationship between the test market and the control markets. This is critical as it ensures that the counterfactual predictions are not rigidly relying on historical relationships between the test and control markets that may be carry large standard errors. Moreover the spike-and-slab priors help avoid over fitting by promoting a sparseness during market (variable) selection.
 
 As a result, this approach produces robust counterfactual expectations for the post period that factors in uncertainties in historical market relationships as well as unobserved trends. Moreover, we can calculate posterior intervals through sampling to gauge confidence in the magnitude of causal impact and estimate the posterior probability that the causal impact is non-existent. The "diff in diff" approach does not provide this level of flexibility and does not handle parameter-uncertainty nearly as well.
 
@@ -165,9 +167,11 @@ When `MarketMatching` calls `CausalImpact` the following structural time series 
 $$ Y_t = \mu_t + x_t \beta + e_t, e_t \sim N(0, \sigma^2_e) $$
 $$ \mu_{t+1} = \mu_t + \nu_t, \nu_t \sim N(0, \sigma^2_{\nu}) $$
 
-Here $x_t$ denote the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and hence is often referred to as the *unobserved trend*. The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details.
+Here $x_t$ denote the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and is often referred to as the *unobserved trend*. The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details.
 
 Once this model is in place, we can create a synthetic control series by predicting the values for the post period, and compare to the actual values. In order to gauge believability of the difference between the control series and the observed values, posterior intervals can be created through sampling in a pure Bayesian fashion. We can also compute the tail probability of a non-zero impact. The `CausalImpact` package conveniently calculates the posterior inference for us.
+
+Note that the `CausalImpact` package can fit much more complicated models with seasonal terms and dynamic coefficients for the linear regression component, but the `MarketMatching` package sticks to the more conservative model based on the assumptions that the control markets will handle seasonality and that static control market coefficients is sufficient. 
 
 ### About Spike-and-Slab Priors
 The `CausalImpact` package applies spike-and-slab priors to the coefficients of the linear regression terms. In short, the spike-and-slab prior consist of two parts:
@@ -192,11 +196,11 @@ Here are some tips to deciding the standard error:
 * When you cannot make a decision, choose 0.01.
 
 ### Note on Structural Time Series Models
-The `CausalImpact` package can fit much more complicated models with seasonal terms and dynamic coefficients for the linear regression component. The class of models deployed by the `CausalImpact` package is flexible and, in fact, all ARIMA models can be converted into a structural model. For example, the ARIMA(0,1,1) model
+The class of structural time series models deployed by the `CausalImpact` package provides the most flexible and transparent approach to modeling time series data. In fact, all ARIMA models can be converted into a structural time series model. Take for example the ARIMA(0,1,1) model
 
 $$ (1 − B)y_t = (1 − \rho B)a_t, $$
 
-where $B$ is the backshift operator, $\rho$ is the AR(1) coefficient, and $a_t$ are the residuals, can be recast as the structural model with a local level term (the model described above). However, the structural model is more transparent by no operating in a differenced space and its Bayesian nature allows us to control the variance of the local level term and hence reduce the variance of the forecasted posterior values.
+where $B$ is the backshift operator, $\rho$ is the AR(1) coefficient, and $a_t$ are the residuals. This model can be recast as the structural model with a local level term (the model described above). However, it's fair to say that the structural model is more transparent and easier to control than the ARIMA model. It is more transparent because it does not operate in a differenced space, and it is easier to control because we can manage the variance of the local level term in a Bayesian fashion.
 
 # How to Install
 ```{r, eval=FALSE}
@@ -208,7 +212,7 @@ install_github("klarsen1/MarketMatching")
 # Example
 The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where reach row represent a unique combination of date and area. It has three columns: Area, date, and the average temperature reading for the day.
 
-This is *not* the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term is a different blog post). We'll merely use the data to demonstrate the features.
+This is *not* the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term impact is a different blog post). We'll merely use the data to demonstrate the features.
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
 ##-----------------------------------------------------------------------
@@ -249,7 +253,7 @@ Plot the cumulative impact. The posterior interval includes zero as expected, wh
 results$PlotCumulativeEffect
 ```
 
-Although it looks like some of the dips in the *pointwise* effects toward the end of the post period seem to be truly negative:
+Although it looks like some of the dips in the *point-wise* effects toward the end of the post period seem to be truly negative:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 results$PlotPointEffect
 ```
@@ -265,7 +269,7 @@ PLot the actual data for the test and control markets:
 results$PlotActuals
 ```
 
-Check DW, MAPE and largest market coefficient for different values of the local level SE. It looks like it will be hard to get a DW statistic close to 2, although our model may benefit from a higher local level standard error than the default of 0.01:
+Check the Durbin-Watson statistic (DW), MAPE and largest market coefficient for different values of the local level SE. It looks like it will be hard to get a DW statistic close to 2, although our model may benefit from a higher local level standard error than the default of 0.01:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 results$PlotPriorLevelSdAnalysis
 ```
