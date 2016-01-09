@@ -162,14 +162,14 @@ Here $d(\phi_x(t), \phi_z(t))$ is the local distance between the remapped data p
 Thus, the goal is essentially to find the warping curve, $\phi$ such that $D(X,Z)$ is minimized. Standard constraints for this optimization problem include:
 
 * Monotonicity: ensures that the ordering of the indexes of the time series are preserved – i.e., $\phi_x(t+1) > \phi_x(t)$.
-* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well known Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than four weeks.
+* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well known Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. 
 
 ## Dynamic Time Warping Example
 To see how this works, consider the following example. We'll use the weather dataset included with the `MarketMatching` package and use the first 10 days from the Copenhagen time series as the test market and San Francisco as the control market (query series).
 
 Note that the code in this example is *not* needed to run the `MarketMatching` package; the package will set it up for you. This is simply to demonstrate the details behind the scene.
 
-First, let's look at the warping limits imposed by the Sakoe-Chiba band with $L=2$:
+First, let's look at the warping limits imposed by the Sakoe-Chiba band with $L=1$:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
 library(MarketMatching)
 library(dtw)
@@ -180,22 +180,20 @@ sfo <- subset(weather, Area=="SFO")$Mean_TemperatureF[1:10]
 cph
 sfo
 
-align <- dtw(cph, sfo, window.type=sakoeChibaWindow, window.size=2, keep=TRUE)
+align <- dtw(cph, sfo, window.type=sakoeChibaWindow, window.size=1, keep=TRUE)
 ```
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 dtwWindow.plot(sakoeChibaWindow, window.size=2, reference=10, query=10)
 ```
 
-This shows that, as expected, the band is a symmetric constraint around the diagonal.
-
-Next, let's look at the alignment between the two time series. The following code shows the two time series as well as how data points are connected:
+This shows that, as expected, the band is a symmetric constraint around the diagonal. Next, let's look at the alignment between the two time series. The following code shows the two time series as well as how data points are connected:
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 plot(align,type="two", off=1)
 ```
 
-This shows that the two cities are not well aligned naturally (not surprising), and that some reference values are mapped to four different query values (the most allowed).
+Clearly, the first ten days of these two cities are not well aligned naturally (not surprising given the geographic locations), and that several reference values had to be mapped to three different query values ($L+1$ is the most replications allowed by the band).
 
 It also helps to look at the actual cost matrix and the optimal alignment path that leads to the minimal distance.
 
@@ -214,11 +212,11 @@ image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="SFO Index")
 text(row(lcm),col(lcm),label=lcm)
 lines(align$index1,align$index2)
 ```
-The cumulative distance matrix above shows that minimum (weighted) cumulative distance between Copenhagen and San Francisco equals 195. This is a large number considering that the distance between Zurich and Copenhagen is 44:
+The cumulative distance matrix above shows that minimum (weighted) cumulative distance between Copenhagen and San Francisco equals 206. This is a large number considering that the distance between Zurich and Copenhagen is 51:
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 zrh <- subset(weather, Area=="ZRH")$Mean_TemperatureF[1:10]
-match <- dtw(cph, zrh, window.type=sakoeChibaWindow, window.size=2, keep=TRUE)
+match <- dtw(cph, zrh, window.type=sakoeChibaWindow, window.size=1, keep=TRUE)
 lcm <- match$costMatrix
 match$distance
 image(x=1:nrow(lcm),y=1:ncol(lcm),lcm,xlab="CPH Index",ylab="ZRH Index")

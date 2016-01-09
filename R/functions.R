@@ -116,7 +116,8 @@ dw <- function(y, yhat){
 #' @param date_variable the time stamp variable
 #' @param matching_variable the variable (metric) used to match the markets. For example, this could be sales or new customers
 #' @param parallel set to TRUE for parallel processing. Default is TRUE
-#' @param warping_limit the warping limit used for matching. Default is 2
+#' @param warping_limit the warping limit used for matching. Default is 1, 
+#' which means that a single query value can be mapped to at most 2 reference values.
 #' @param start_match_period the start date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"
 #' @param end_match_period the end date of the matching period (pre period).
@@ -155,7 +156,7 @@ dw <- function(y, yhat){
 #'              id_variable=NULL,
 #'              date_variable=NULL,
 #'              matching_variable=NULL,
-#'              warping_limit=2,
+#'              warping_limit=1,
 #'              parallel=TRUE,
 #'              start_match_period=NULL,
 #'              end_match_period=NULL,
@@ -171,7 +172,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 
 
-best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=2, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1){
+best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=1, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1){
 
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")

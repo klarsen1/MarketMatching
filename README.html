@@ -64,11 +64,12 @@ img {
 <div id="market-matching-and-causal-impact-inference" class="section level1">
 <h1>Market Matching and Causal Impact Inference</h1>
 <p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.</p>
-<p>An intervention analysis usually involves two steps:</p>
+<p>Intervention analyses require more judgement than evaluation of clinical test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:</p>
 <ol style="list-style-type: decimal">
-<li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”“).</li>
-<li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”“), while factoring in differences between the markets prior to the event.</li>
+<li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
+<li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”), while factoring in differences between the markets prior to the event.</li>
 </ol>
+<p>The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a package that implements the workflow.</p>
 <div id="a-traditional-approach" class="section level2">
 <h2>A Traditional Approach</h2>
 <p>For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.</p>
@@ -85,9 +86,9 @@ img {
 </ol>
 <div id="notes-on-the-workflow" class="section level3">
 <h3>Notes on the Workflow</h3>
-<p>The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the <code>CausalImpact</code> package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the <code>CausalImpact</code> package without pre-screening the markets.</p>
-<p>However, when dealing with a large set of candidate control markets it often turns out to be prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders; you’re much less likely to get a strange and indefensible model. Moreover, basing the synthetic control on markets that have small <em>distances</em> to the test market boosts the face-validity of the analysis as these control markets will be similar in “size” and hence be recognized as viable controls by your business partners. Ultimately, however, this is a matter of preference and the good news is that the <code>MarketMatching</code> package allows users to decide how many control markets should pass through step 1.</p>
-<p>Last but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the “sizes” of the control markets do not matter as long as they are predictive. Again, this is a matter of preferences and <code>MarketMatching</code> allows the user to control whether the ranking is correlation-based or distance-based.</p>
+<p>The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the <code>CausalImpact</code> package selects the most predictive markets for the structural time series model using spike-and-slab priors. Then, we could jump directly to the <code>CausalImpact</code> package without pre-screening the markets.</p>
+<p>However, when dealing with a large set of candidate control markets it often turns out to be prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders - you’re much less likely to get a strange and indefensible model. Moreover, basing the synthetic control on markets that have small <em>distances</em> to the test market boosts the face-validity of the analysis as these control markets will be similar in “size” and hence be recognized as viable controls by your business partners. Ultimately, however, this is a matter of preference and the good news is that the <code>MarketMatching</code> package allows users to decide how many control markets should pass through step 1.</p>
+<p>Last, but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the “sizes” of the control markets do not matter as long as they are predictive. Again, this is a matter of preference and <code>MarketMatching</code> allows the user to control whether the ranking is correlation-based or distance-based.</p>
 </div>
 </div>
 </div>
@@ -116,25 +117,21 @@ img {
 <h1>How to Install</h1>
 <pre class="r"><code>library(devtools)
 install_github(&quot;google/CausalImpact&quot;)
-install_github(&quot;klarsen1/MarketMatching&quot;, &quot;klarsen1&quot;, build_vignettes=TRUE)</code></pre>
-</div>
-<div id="to-learn-more-about-this-package" class="section level1">
-<h1>To Learn More About this Package</h1>
-<p>The vignette shows examples and provides a brief overview of the theory. Check out the vignette by using the following command in <code>R</code>:</p>
-<pre class="r"><code>browseVignettes(&quot;MarketMatching&quot;)</code></pre>
+install_github(&quot;klarsen1/MarketMatching&quot;)</code></pre>
 </div>
 <div id="example" class="section level1">
 <h1>Example</h1>
-<pre class="r"><code>library(MarketMatching)
-##-----------------------------------------------------------------------
+<p>The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.</p>
+<p>This is <em>not</em> the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term impact is a different blog post). We’ll merely use the data to demonstrate the features.</p>
+<pre class="r"><code>##-----------------------------------------------------------------------
 ## Find the best matches (default is 5) for each airport time series
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package=&quot;MarketMatching&quot;)
-mm &lt;- best_matches(data=weather, 
-                   id_variable=&quot;Area&quot;, 
-                   date_variable=&quot;Date&quot;, 
-                   matching_variable=&quot;Mean_TemperatureF&quot;, 
+mm &lt;- best_matches(data=weather,
+                   id_variable=&quot;Area&quot;,
+                   date_variable=&quot;Date&quot;,
+                   matching_variable=&quot;Mean_TemperatureF&quot;,
                    parallel=TRUE,
                    start_match_period=&quot;2014-01-01&quot;,
                    end_match_period=&quot;2014-10-01&quot;)
@@ -144,23 +141,25 @@ mm &lt;- best_matches(data=weather,
 ## just use it to demonstrate the function.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
-results &lt;- MarketMatching::inference(matched_markets = mm, 
-                                    test_market = &quot;CPH&quot;, 
+results &lt;- MarketMatching::inference(matched_markets = mm,
+                                    test_market = &quot;CPH&quot;,
                                     end_post_period = &quot;2015-10-01&quot;)</code></pre>
 <p>A view of the best matches data.frame generated by the best_matches() function:</p>
 <pre class="r"><code>knitr::kable(head(mm$BestMatches))</code></pre>
-<p>Plotting the cumulative impact:</p>
-<pre class="r"><code>results$PlotCumulativeEffect</code></pre>
-<p>Plot actual observations for test market (CPH) versus the expectation:</p>
+<p>Plot actual observations for test market (CPH) versus the expectation. It looks like CPH deviated from its expectation during the winter:</p>
 <pre class="r"><code>results$PlotActualVersusExpected</code></pre>
-<p>Store actual versus predicted values in a data.frame:</p>
+<p>Plot the cumulative impact. The posterior interval includes zero as expected, which means that the cumulative deviation is likely noise:</p>
+<pre class="r"><code>results$PlotCumulativeEffect</code></pre>
+<p>Although it looks like some of the dips in the <em>point-wise</em> effects toward the end of the post period seem to be truly negative:</p>
+<pre class="r"><code>results$PlotPointEffect</code></pre>
+<p>Store the actual versus predicted values in a data.frame:</p>
 <pre class="r"><code>pred &lt;- results$Predictions
 knitr::kable(head(pred))</code></pre>
-<p>PLot the actual data for the test and control markets:</p>
+<p>Plot the actual data for the test and control markets:</p>
 <pre class="r"><code>results$PlotActuals</code></pre>
-<p>Check DW, MAPE and largest market coefficient for different values of the local level SE:</p>
+<p>Check the Durbin-Watson statistic (DW), MAPE and largest market coefficient for different values of the local level SE. It looks like it will be hard to get a DW statistic close to 2, although our model may benefit from a higher local level standard error than the default of 0.01:</p>
 <pre class="r"><code>results$PlotPriorLevelSdAnalysis</code></pre>
-<p>Store the coefficients in a data.frame:</p>
+<p>Store the average posterior coefficients in a data.frame. STR (Stuttgart) receives the highest weight when predicting the weather in Copenhagen:</p>
 <pre class="r"><code>coeff &lt;- results$Coefficients
 knitr::kable(head(coeff))</code></pre>
 </div>

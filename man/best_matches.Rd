@@ -8,7 +8,7 @@ best_matches(data=NULL,
              id_variable=NULL,
              date_variable=NULL,
              matching_variable=NULL,
-             warping_limit=2,
+             warping_limit=1,
              parallel=TRUE,
              start_match_period=NULL,
              end_match_period=NULL,
@@ -24,7 +24,8 @@ In other words, markets are rows and not columns -- we have a unique row for eac
 
 \item{matching_variable}{the variable (metric) used to match the markets. For example, this could be sales or new customers}
 
-\item{warping_limit}{the warping limit used for matching. Default is 2}
+\item{warping_limit}{the warping limit used for matching. Default is 1,
+which means that a single query value can be mapped to at most 2 reference values.}
 
 \item{parallel}{set to TRUE for parallel processing. Default is TRUE}
 
