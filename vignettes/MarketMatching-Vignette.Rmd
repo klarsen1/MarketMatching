@@ -10,13 +10,22 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
+# About the Structure of this Vignette
+This Vignette has three main sections:
+
+1. High level overview of the methodology.
+
+2. Examples and installation instructions.
+
+3. Technical details about dynamic time warping (`dtw` package) and causal inference based on Bayesian structural time series models (`CausalImpact` package).
+
 # Market Matching and Causal Impact Inference
 If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.
 
-Intervention analyses require more judgement than evaluation of clinical test/control studies. When analyzing interventions through time series analysis we typically we go through two steps, each of which can involve multiple decisions:
+Intervention analyses require more judgement than evaluation of clinical test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:
 
-1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period"").
-2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period""), while factoring in differences between the markets prior to the event.
+1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period").
+2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period"), while factoring in differences between the markets prior to the event.
 
 The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a package that implements the workflow. 
 
@@ -37,11 +46,11 @@ We can summarize this workflow as follows:
 2. Fit a Bayesian structural time series model that leverages the control markets identified in step 1. Based on this model, create a synthetic control series by producing a counterfactual prediction for the post period assuming that the event did not take place. Then calculate the difference between the synthetic control and the test market for the post-intervention period – which is the estimated impact of the event – and compare to the posterior interval to gauge uncertainty. 
 
 ### Notes on the Workflow
-The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. This, we could jump directly to the `CausalImpact` package without pre-screening the markets.
+The dynamic time warping step is not a strictly necessary step to execute this workflow; we can select markets directly while building the time series model during step 2. In fact, the `CausalImpact` package selects the most predictive markets for the structural time series model using spike-and-slab priors. Then, we could jump directly to the `CausalImpact` package without pre-screening the markets.
 
-However, when dealing with a large set of candidate control markets it often turns out to be prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders; you're much less likely to get a strange and indefensible model. Moreover, basing the synthetic control on markets that have small *distances* to the test market boosts the face-validity of the analysis as these control markets will be similar in "size" and hence be recognized as viable controls by your business partners.  Ultimately, however, this is a matter of preference and the good news is that the `MarketMatching` package allows users to decide how many control markets should pass through step 1.
+However, when dealing with a large set of candidate control markets it often turns out to be prudent to trim the list in advance, as opposed to relying solely on the variable selection process. In other words, pre-screening the markets is akin to wearing belt and suspenders - you're much less likely to get a strange and indefensible model. Moreover, basing the synthetic control on markets that have small *distances* to the test market boosts the face-validity of the analysis as these control markets will be similar in "size" and hence be recognized as viable controls by your business partners.  Ultimately, however, this is a matter of preference and the good news is that the `MarketMatching` package allows users to decide how many control markets should pass through step 1.
 
-Last but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the "sizes" of the control markets do not matter as long as they are predictive. Again, this is a matter of preferences and `MarketMatching` allows the user to control whether the ranking is correlation-based or distance-based.
+Last, but not least, one can argue that the initial screening should be correlation-based and that distances are irrelevant – i.e., the "sizes" of the control markets do not matter as long as they are predictive. Again, this is a matter of preference and `MarketMatching` allows the user to control whether the ranking is correlation-based or distance-based.
 
 # About MarketMatching Package
 
@@ -71,7 +80,7 @@ install_github("klarsen1/MarketMatching")
 ```
 
 # Example
-The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where reach row represent a unique combination of date and area. It has three columns: Area, date, and the average temperature reading for the day.
+The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.
 
 This is *not* the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term impact is a different blog post). We'll merely use the data to demonstrate the features.
 
@@ -125,7 +134,7 @@ pred <- results$Predictions
 knitr::kable(head(pred))
 ```
 
-PLot the actual data for the test and control markets:
+Plot the actual data for the test and control markets:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 results$PlotActuals
 ```
@@ -153,12 +162,12 @@ Here $d(\phi_x(t), \phi_z(t))$ is the local distance between the remapped data p
 Thus, the goal is essentially to find the warping curve, $\phi$ such that $D(X,Z)$ is minimized. Standard constraints for this optimization problem include:
 
 * Monotonicity: ensures that the ordering of the indexes of the time series are preserved – i.e., $\phi_x(t+1) > \phi_x(t)$.
-* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well known the Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than four weeks.
+* Warping limits: limits the length of the permissible steps. The `MarketMatching` package specifies the well known Sakoe-Chiba band (when calling `dtw`) which allows the user to specify a maximum allowed time difference between two matched data points. This can be expressed as  $|\phi_x(t)-\phi_z(t)<L$, where $L$ is the maximum allowed difference. For example, if your data is weekly and $L=2$, we would never allow the warping curve to skip more than four weeks.
 
 ## Dynamic Time Warping Example
 To see how this works, consider the following example. We'll use the weather dataset included with the `MarketMatching` package and use the first 10 days from the Copenhagen time series as the test market and San Francisco as the control market (query series).
 
-Note that the code in this example is *not* needed to run the `MarketMatching` package, the package will set it up for you. This is simply to demonstrate the details behind the scene.
+Note that the code in this example is *not* needed to run the `MarketMatching` package; the package will set it up for you. This is simply to demonstrate the details behind the scene.
 
 First, let's look at the warping limits imposed by the Sakoe-Chiba band with $L=2$:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
@@ -217,17 +226,15 @@ text(row(lcm),col(lcm),label=lcm)
 lines(match$index1,match$index2)
 ```
 
-Note that the weights that are applied to the local distances are determined by the *step pattern* used. When the default step pattern is chosen, diagonal steps are weighted by a factor of 2 while other steps receive a weight of 1. We can visualize this by using the `plot` function provided by the `dtw` package:
+Note that the weights that are applied to the local distances are determined by the *step pattern* used. When the default step pattern is chosen, diagonal steps are weighted by a factor of 2 while other steps receive a weight of 1. Thus, with this step pattern a two-step "detour" will cost as much as a direct diagonal step (if all local distances are equal). We can visualize this by using the `plot` function provided by the `dtw` package:
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 plot(align$stepPattern)
 ```
 
-With this step pattern a two-step "detour" will cost as much as a direct diagonal step (if all local distances are equal). Thus, this step pattern essentially allows for as much stretching of the warping curve as possible within the specified band (see [2]). For example, in this specific case, we can match a single element of the query index (CPH) to as many as four points of the reference index (ZRH). 
-
 # How Does Intervention Inference Work?
 As mentioned, the `MarketMatching` package utilizes the `CausalImpact` package written by Kay Brodersen at Google (see [1]) to do the post period inference. 
-Here is how it works at a high level:
+Here's how it works at a high level:
 
 1. Fit a Bayesian structural time series model using data prior to the pre-intervention period. The model can include the control markets as linear regression components with spike-and-slab priors.
 
@@ -235,9 +242,9 @@ Here is how it works at a high level:
 
 3. In a pure Bayesian fashion, leverage the counterfactual predictions to quantify the causal impact of the intervention.
 
-This approach has a number of benefits over the "diff in diff" approach: first, using a structural time series model allows us to capture for latent evolutions of the test market that cannot be explained by known trends or events. Second, estimating control markets effects with Bayesian priors captures the uncertainty of the relationship between the test market and the control markets. This is critical as it ensures that the counterfactual predictions are not rigidly relying on historical relationships between the test and control markets that may be carry large standard errors. Moreover the spike-and-slab priors help avoid over fitting by promoting a sparseness during market (variable) selection.
+This approach has a number of benefits over the "diff in diff" approach: first, using a structural time series model allows us to capture latent evolutions of the test market that cannot be explained by known trends or events. Second, estimating control markets effects with Bayesian priors captures the uncertainty of the relationship between the test market and the control markets. This is critical as it ensures that the counterfactual predictions are not rigidly relying on historical relationships between the test and control markets that may be carrying large standard errors. Moreover the spike-and-slab priors help avoid overfitting by promoting a sparseness during market (variable) selection.
 
-As a result, this approach produces robust counterfactual expectations for the post period that factors in uncertainties in historical market relationships as well as unobserved trends. Moreover, we can calculate posterior intervals through sampling to gauge confidence in the magnitude of causal impact and estimate the posterior probability that the causal impact is non-existent. The "diff in diff" approach does not provide this level of flexibility and does not handle parameter-uncertainty nearly as well.
+As a result, this approach produces robust counterfactual expectations for the post period that factors in uncertainties in historical market relationships as well as unobserved trends. Moreover, we can calculate posterior intervals through sampling to gauge confidence in the magnitude of causal impact and estimate the posterior probability that the causal impact is non-existent. The "diff in diff" approach does not provide this level of flexibility and does not handle parameter uncertainty nearly as well.
 
 ## Some Technical Details
 When `MarketMatching` calls `CausalImpact` the following structural time series model (state space model) is created for the pre-intervention period:
@@ -245,7 +252,7 @@ When `MarketMatching` calls `CausalImpact` the following structural time series 
 $$ Y_t = \mu_t + x_t \beta + e_t, e_t \sim N(0, \sigma^2_e) $$
 $$ \mu_{t+1} = \mu_t + \nu_t, \nu_t \sim N(0, \sigma^2_{\nu}) $$
 
-Here $x_t$ denote the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and is often referred to as the *unobserved trend*. The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details.
+Here $x_t$ denotes the control markets and $\mu_t$ is the *local level* term. The local level term defines how the latent state evolves over time and is often referred to as the *unobserved trend*. The linear regression term, $x_t\beta$, averages over the selected control markets. See [1] and [3] for more details.
 
 Once this model is in place, we can create a synthetic control series by predicting the values for the post period, and compare to the actual values. In order to gauge believability of the difference between the control series and the observed values, posterior intervals can be created through sampling in a pure Bayesian fashion. We can also compute the tail probability of a non-zero impact. The `CausalImpact` package conveniently calculates the posterior inference for us.
 
@@ -256,7 +263,7 @@ The `CausalImpact` package applies spike-and-slab priors to the coefficients of 
 
 The spike part governs a market's probability of being chosen for the model (i.e., having a non-zero coefficient). This is typically a product of independent Bernoulli distributions (one for each variable), where the parameters (probability of getting chosen) can be set according to the expected model size. The slab part is a wide-variance Gaussian prior that shrinks the non-zero coefficients toward some value (usually zero).
 
-This approach is a powerful way of reducing a large set of correlated markets into a parsimonious model that averages of a smaller set of markets. Moreover, since the market coefficients follow random distributions, we can incorporate the uncertainties of the historical relationships into the model as opposed to relying on a rigid encoding based on fixed coefficients when forecasting.
+This approach is a powerful way of reducing a large set of correlated markets into a parsimonious model that averages  a smaller set of markets. Moreover, since the market coefficients follow random distributions, we can incorporate the uncertainties of the historical relationships into the model as opposed to relying on a rigid encoding based on fixed coefficients when forecasting.
 
 For more details in spike-and-slab priors, see [1].
 
@@ -269,12 +276,12 @@ Here are some tips to deciding the standard error:
 
 * If you know a priori that the series is volatile due to unexplained noise, choose 0.1.
 
-* Try different values of the standard error, and check the MAPE and Durbin-Watson statistic. The MAPE measures the historical fit and the Durbin-Watson statistic measures the level of autocorrelation in the residuals. This shows you the tradeoff between a larger standard error versus fit and ill-behaved residuals. Note that the Durbin-Watson statistic should be as close to 2 as possible. We want to choose a standard error that is as small as possible in order rely more on the predictive value coming from the control markets, but not at any cost. The `MarketMatching` package produces charts that help make this tradeoff.
+* Try different values of the standard error, and check the MAPE and Durbin-Watson statistic. The MAPE measures the historical fit and the Durbin-Watson statistic measures the level of autocorrelation in the residuals. This shows you the tradeoff between a larger standard error versus fit and ill-behaved residuals. Note that the Durbin-Watson statistic should be as close to 2 as possible. We want to choose a standard error that is as small as possible in order to rely more on the predictive value coming from the control markets, but not at any cost. The `MarketMatching` package produces charts that help make this tradeoff.
 
 * When you cannot make a decision, choose 0.01.
 
 ### Note on Structural Time Series Models
-The class of structural time series models deployed by the `CausalImpact` package provides the most flexible and transparent approach to modeling time series data. In fact, all ARIMA models can be converted into a structural time series model. Take for example the ARIMA(0,1,1) model
+The class of structural time series models deployed by the `CausalImpact` package provides the most flexible and transparent approach to modeling time series data. In fact, all ARIMA models can be converted into a structural time series model. Take for example the ARIMA(0,1,1) model.
 
 $$ (1 − B)y_t = (1 − \rho B)a_t, $$
 
