@@ -27,7 +27,7 @@ Intervention analyses require more judgement than evaluation of clinical test/co
 1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period").
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period"), while factoring in differences between the markets prior to the event.
 
-The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a package that implements the workflow. 
+The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a small `R` package that implements the workflow. 
 
 ## A Traditional Approach
 For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
