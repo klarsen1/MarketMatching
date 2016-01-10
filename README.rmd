@@ -55,7 +55,7 @@ Hence, the package does *not* provide any core functionality that cannot be foun
 ```{r, eval=FALSE}
 library(devtools)
 install_github("google/CausalImpact")
-install_github("klarsen1/MarketMatching")
+install_github("klarsen1/MarketMatching", build_vignettes=TRUE)
 ```
 
 # Example
@@ -74,6 +74,9 @@ mm <- best_matches(data=weather,
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
                    parallel=TRUE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=1, # reply only on dtw for matching
+                   matches=5, # request 5 matches
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 ##-----------------------------------------------------------------------

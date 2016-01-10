@@ -75,7 +75,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”), while factoring in differences between the markets prior to the event.</li>
 </ol>
-<p>The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a package that implements the workflow.</p>
+<p>The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a small <code>R</code> package that implements the workflow.</p>
 <div id="a-traditional-approach" class="section level2">
 <h2>A Traditional Approach</h2>
 <p>For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.</p>
@@ -130,7 +130,8 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <p>The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.</p>
 <p>This is <em>not</em> the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term impact is a different blog post). We’ll merely use the data to demonstrate the features.</p>
 <pre class="sourceCode r"><code class="sourceCode r">##-----------------------------------------------------------------------
-## Find the best matches (default is 5) for each airport time series
+## Find the best 5 matches for each airport time series. Matching will
+## rely entirely on dynamic time warping (dtw) with a limit of 1
 ##-----------------------------------------------------------------------
 <span class="kw">library</span>(MarketMatching)
 <span class="kw">data</span>(weather, <span class="dt">package=</span><span class="st">&quot;MarketMatching&quot;</span>)
@@ -139,6 +140,9 @@ mm &lt;-<span class="st"> </span><span class="kw">best_matches</span>(<span clas
                    <span class="dt">date_variable=</span><span class="st">&quot;Date&quot;</span>,
                    <span class="dt">matching_variable=</span><span class="st">&quot;Mean_TemperatureF&quot;</span>,
                    <span class="dt">parallel=</span><span class="ot">TRUE</span>,
+                   <span class="dt">warping_limit=</span><span class="dv">1</span>, <span class="co"># warping limit=1</span>
+                   <span class="dt">dtw_emphasis=</span><span class="dv">1</span>, <span class="co"># reply only on dtw for matching</span>
+                   <span class="dt">matches=</span><span class="dv">5</span>, <span class="co"># request 5 matches</span>
                    <span class="dt">start_match_period=</span><span class="st">&quot;2014-01-01&quot;</span>,
                    <span class="dt">end_match_period=</span><span class="st">&quot;2014-10-01&quot;</span>)
 ##-----------------------------------------------------------------------

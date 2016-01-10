@@ -69,7 +69,7 @@ img {
 <li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”), while factoring in differences between the markets prior to the event.</li>
 </ol>
-<p>The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a package that implements the workflow.</p>
+<p>The purpose of this Vignette is to describe a robust approach to intervention analysis and introduce a small <code>R</code> package that implements the workflow.</p>
 <div id="a-traditional-approach" class="section level2">
 <h2>A Traditional Approach</h2>
 <p>For the first step, the most straightforward approach is to use the Euclidian distance to find matching control markets. However, this approach implicitly over-penalizes instances where the markets are shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.</p>
@@ -133,6 +133,9 @@ mm &lt;- best_matches(data=weather,
                    date_variable=&quot;Date&quot;,
                    matching_variable=&quot;Mean_TemperatureF&quot;,
                    parallel=TRUE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=1, # reply only on dtw for matching
+                   matches=5, # request 5 matches
                    start_match_period=&quot;2014-01-01&quot;,
                    end_match_period=&quot;2014-10-01&quot;)
 ##-----------------------------------------------------------------------
