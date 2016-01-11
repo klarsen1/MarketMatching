@@ -254,14 +254,17 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' library(MarketMatching)
 #' ##-----------------------------------------------------------------------
 #' ## Analyze causal impact of a made-up weather intervention in Copenhagen
-#' ## Since this is weather data this is a meaningless example and we should
-#' ## expect no causal impact. This is just to demo the function.
+#' ## Since this is weather data it is a not a very meaningful example. 
+#' ## This is merely to demonstrate the function.
 #' ##-----------------------------------------------------------------------
 #' data(weather, package="MarketMatching")
 #' mm <- best_matches(data=weather, id="Area",
 #'                    date_variable="Date",
 #'                    matching_variable="Mean_TemperatureF",
 #'                    parallel=FALSE,
+#'                    warping_limit=1, # warping limit=1
+#'                    dtw_emphasis=1, # rely only on dtw for pre-screening
+#'                    matches=5, # request 5 matches
 #'                    start_match_period="2014-01-01",
 #'                    end_match_period="2014-10-01")
 #' library(CausalImpact)

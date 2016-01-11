@@ -40,10 +40,13 @@ For more details, check out the vignette: browseVignettes("MarketMatching")
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather, id_variable="Area",
+mm <- best_matches(data=weather, id="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
-                   parallel=TRUE,
+                   parallel=FALSE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=1, # rely only on dtw for pre-screening
+                   matches=5, # request 5 matches
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 head(mm$Distances)
@@ -51,8 +54,8 @@ subset(mm$Distances, Area=="CPH")
 
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
-## Since this is weather data it is a not a very meaningful example. We'll
-## just use it to demonstrate the function.
+## Since this is weather data it is a not a very meaningful example.
+## This is merely to demonstrate the function.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
 results <- MarketMatching::inference(matched_markets = mm,
@@ -61,7 +64,7 @@ results <- MarketMatching::inference(matched_markets = mm,
                                      prior_level_sd = 0.002)
 
 ## Plot the impact
-results$PlotAbsoluteEffect
+results$PlotCumulativeEffect
 
 ## Plot actual observations for test market (CPH) versus the expectation (based on the control)
 results$PlotActualVersusExpected

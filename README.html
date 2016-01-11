@@ -64,7 +64,7 @@ img {
 <div id="market-matching-and-causal-impact-inference" class="section level1">
 <h1>Market Matching and Causal Impact Inference</h1>
 <p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.</p>
-<p>Intervention analyses require more judgement than evaluation of clinical test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:</p>
+<p>Intervention analyses require more judgement than evaluation of standard, randomized test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:</p>
 <ol style="list-style-type: decimal">
 <li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”), while factoring in differences between the markets prior to the event.</li>
@@ -134,14 +134,14 @@ mm &lt;- best_matches(data=weather,
                    matching_variable=&quot;Mean_TemperatureF&quot;,
                    parallel=TRUE,
                    warping_limit=1, # warping limit=1
-                   dtw_emphasis=1, # reply only on dtw for matching
+                   dtw_emphasis=1, # rely only on dtw for pre-screening
                    matches=5, # request 5 matches
                    start_match_period=&quot;2014-01-01&quot;,
                    end_match_period=&quot;2014-10-01&quot;)
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
-## Since this is weather data it is a not a very meaningful example. We'll 
-## just use it to demonstrate the function.
+## Since this is weather data it is a not a very meaningful example.
+## This is merely to demonstrate the function.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
 results &lt;- MarketMatching::inference(matched_markets = mm,

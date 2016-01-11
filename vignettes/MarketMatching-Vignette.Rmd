@@ -22,7 +22,7 @@ This Vignette has three main sections:
 # Market Matching and Causal Impact Inference
 If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.
 
-Intervention analyses require more judgement than evaluation of clinical test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:
+Intervention analyses require more judgement than evaluation of standard, randomized test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:
 
 1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period").
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period"), while factoring in differences between the markets prior to the event.
@@ -97,14 +97,14 @@ mm <- best_matches(data=weather,
                    matching_variable="Mean_TemperatureF",
                    parallel=TRUE,
                    warping_limit=1, # warping limit=1
-                   dtw_emphasis=1, # reply only on dtw for matching
+                   dtw_emphasis=1, # rely only on dtw for pre-screening
                    matches=5, # request 5 matches
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
-## Since this is weather data it is a not a very meaningful example. We'll 
-## just use it to demonstrate the function.
+## Since this is weather data it is a not a very meaningful example. 
+## This is merely to demonstrate the function.
 ##-----------------------------------------------------------------------
 library(CausalImpact)
 results <- MarketMatching::inference(matched_markets = mm,
@@ -188,7 +188,7 @@ align <- dtw(cph, sfo, window.type=sakoeChibaWindow, window.size=1, keep=TRUE)
 ```
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
-dtwWindow.plot(sakoeChibaWindow, window.size=2, reference=10, query=10)
+dtwWindow.plot(sakoeChibaWindow, window.size=1, reference=10, query=10)
 ```
 
 This shows that, as expected, the band is a symmetric constraint around the diagonal. Next, let's look at the alignment between the two time series. The following code shows the two time series as well as how data points are connected:
