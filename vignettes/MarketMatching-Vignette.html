@@ -10,7 +10,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2016-01-10" />
+<meta name="date" content="2016-01-11" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -54,22 +54,22 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">MarketMatching Package Vignette</h1>
 <h4 class="author"><em>Kim Larsen</em></h4>
-<h4 class="date"><em>2016-01-10</em></h4>
+<h4 class="date"><em>2016-01-11</em></h4>
 </div>
 
 
 <div id="about-the-structure-of-this-vignette" class="section level1">
 <h1>About the Structure of this Vignette</h1>
-<p>This Vignette has three main sections:</p>
+<p>This Vignette has three main sections, in the following order:</p>
 <ol style="list-style-type: decimal">
 <li><p>High level overview of the methodology.</p></li>
 <li><p>Examples and installation instructions.</p></li>
-<li><p>Technical details about dynamic time warping (<code>dtw</code> package) and causal inference based on Bayesian structural time series models (<code>CausalImpact</code> package).</p></li>
+<li><p>Details about the theory behind dynamic time warping (<code>dtw</code> package) and causal inference based on Bayesian structural time series models (<code>CausalImpact</code> package).</p></li>
 </ol>
 </div>
 <div id="market-matching-and-causal-impact-inference" class="section level1">
 <h1>Market Matching and Causal Impact Inference</h1>
-<p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the entrance of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant.</p>
+<p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new TV campaign, a major PR event, or the emergence of a new local competitor using some sort of time series approach. The impact of such events cannot be tracked at the individual customer level and we do not have the luxury of clean test and control groups. Instead we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you’re in.</p>
 <p>Intervention analyses require more judgement than evaluation of standard, randomized test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple decisions:</p>
 <ol style="list-style-type: decimal">
 <li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
