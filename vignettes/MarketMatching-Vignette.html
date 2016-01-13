@@ -58,23 +58,15 @@ code > span.er { color: #ff0000; font-weight: bold; }
 </div>
 
 
-<div id="about-the-structure-of-this-document" class="section level1">
-<h1>About the Structure of this Document</h1>
-<ol style="list-style-type: decimal">
-<li><p>High level overview of the methodology.</p></li>
-<li><p>Examples and installation instructions.</p></li>
-<li><p>Details on the theory behind dynamic time warping (<code>dtw</code> package) and causal inference based on Bayesian structural time series models (<code>CausalImpact</code> package).</p></li>
-</ol>
-</div>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>If you’ve ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we do not have the luxury of a clean test/control design. Hence we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you’re in.</p>
-<p>Intervention analyses require more judgement than evaluation of randomized test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:</p>
+<p>Intervention analyses typically require more judgement than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:</p>
 <ol style="list-style-type: decimal">
 <li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”), while factoring in differences between the markets prior to the event.</li>
 </ol>
-<p>The purpose of this document is to describe a robust approach to intervention analysis based on two key <code>R</code> packages: the <code>CausalImpact</code> package written by Kay Brodersen at Google and the <code>dtw</code> package available in CRAN. In addition, we will introduce an <code>R</code> package called <code>MarketMatching</code> which implements a simple intervention analysis workflow based on these two packages.</p>
+<p>The purpose of this document is to describe a robust approach to intervention analysis based on two key <code>R</code> packages: the <code>CausalImpact</code> package written by Kay Brodersen at Google and the <code>dtw</code> package available in CRAN. In addition, we will introduce an <code>R</code> package called <code>MarketMatching</code> which implements a simple workflow based on these two packages.</p>
 <div id="a-traditional-approach" class="section level2">
 <h2>A Traditional Approach</h2>
 <p>For the time series matching step the most straightforward approach is to use the Euclidian distance. However, this approach implicitly over-penalizes instances where relationships between markets are temporarily shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.</p>
@@ -129,6 +121,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <h1>Example</h1>
 <p>The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.</p>
 <p>This is <em>not</em> the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term impact is a different blog post). We’ll merely use the data to demonstrate the features.</p>
+<p>For more details on the theory behind dynamic time warping and causal inference using test and control markets, see the technical sections following this example as well as [1], [2], and [3].</p>
 <pre class="sourceCode r"><code class="sourceCode r">##-----------------------------------------------------------------------
 ## Find the best 5 matches for each airport time series. Matching will
 ## rely entirely on dynamic time warping (dtw) with a limit of 1
