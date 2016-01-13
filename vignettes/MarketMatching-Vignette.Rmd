@@ -11,8 +11,6 @@ vignette: >
 ---
 
 # About the Structure of this Document
-This document has three main sections, structured in the following order:
-
 1. High level overview of the methodology.
 
 2. Examples and installation instructions.
