@@ -11,7 +11,7 @@ vignette: >
 ---
 
 # Introduction
-If you've ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we do not have the luxury of a clean test/control design. Hence we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you're in.
+If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you're in.
 
 Intervention analyses typically require more judgement than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:
 
@@ -280,7 +280,7 @@ The class of structural time series models deployed by the `CausalImpact` packag
 
 $$ (1 − B)y_t = (1 − \rho B)a_t, $$
 
-where $B$ is the backshift operator, $\rho$ is the AR(1) coefficient, and $a_t$ are the residuals. This model can be recast as the structural model with a local level term (the model described above). However, it's fair to say that the structural model is more transparent and easier to control than the ARIMA model: it is more transparent because it does not operate in a differenced space, and it is easier to control because we can manage the variance of the local level term in a Bayesian fashion.
+where $B$ is the backshift operator, $\rho$ is the AR(1) coefficient, and $a_t$ denote the residuals. This model can be recast as the structural model with a local level term (the model described above). However, it's fair to say that the structural model is more transparent and easier to control than the ARIMA model: it is more transparent because it does not operate in a differenced space, and it is easier to control because we can manage the variance of the local level term in a Bayesian fashion.
 
 # References
 [1] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). http://google.github.io/CausalImpact/

@@ -10,7 +10,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2016-01-12" />
+<meta name="date" content="2016-01-13" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -54,13 +54,13 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">MarketMatching Package Vignette</h1>
 <h4 class="author"><em>Kim Larsen</em></h4>
-<h4 class="date"><em>2016-01-12</em></h4>
+<h4 class="date"><em>2016-01-13</em></h4>
 </div>
 
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>If you’ve ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we do not have the luxury of a clean test/control design. Hence we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you’re in.</p>
+<p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you’re in.</p>
 <p>Intervention analyses typically require more judgement than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:</p>
 <ol style="list-style-type: decimal">
 <li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
@@ -468,7 +468,7 @@ match$distance</code></pre>
 <h3>Note on Structural Time Series Models</h3>
 <p>The class of structural time series models deployed by the <code>CausalImpact</code> package provides the most flexible and transparent approach to modeling time series data. In fact, all ARIMA models can be converted into a structural time series model. Take for example the ARIMA(0,1,1) model.</p>
 <p><span class="math">\[ (1 − B)y_t = (1 − \rho B)a_t, \]</span></p>
-<p>where <span class="math">\(B\)</span> is the backshift operator, <span class="math">\(\rho\)</span> is the AR(1) coefficient, and <span class="math">\(a_t\)</span> are the residuals. This model can be recast as the structural model with a local level term (the model described above). However, it’s fair to say that the structural model is more transparent and easier to control than the ARIMA model: it is more transparent because it does not operate in a differenced space, and it is easier to control because we can manage the variance of the local level term in a Bayesian fashion.</p>
+<p>where <span class="math">\(B\)</span> is the backshift operator, <span class="math">\(\rho\)</span> is the AR(1) coefficient, and <span class="math">\(a_t\)</span> denote the residuals. This model can be recast as the structural model with a local level term (the model described above). However, it’s fair to say that the structural model is more transparent and easier to control than the ARIMA model: it is more transparent because it does not operate in a differenced space, and it is easier to control because we can manage the variance of the local level term in a Bayesian fashion.</p>
 </div>
 </div>
 </div>
