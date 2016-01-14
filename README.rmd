@@ -9,7 +9,7 @@ Intervention analyses require more judgement than evaluation of randomized test/
 The purpose of this document is to describe a robust approach to intervention analysis based on two key `R` packages: the `CausalImpact` package written by Kay Brodersen at Google and the `dtw` package available in CRAN. In addition, we will introduce an `R` package called `MarketMatching` which implements a simple intervention analysis workflow based on these two packages.
 
 ## A Traditional Approach
-For the time series matching step the most straightforward approach is to use the Euclidian distance. However, this approach implicitly over-penalizes instances where relationships between markets are temporarily shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.
+For the time series matching step the most straightforward approach is to use the Euclidian distance. However, this approach implicitly over-penalizes instances where relationships between markets are temporarily shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates. Or another option is to match based on correlation, but this does not factor in size.
 
 For the inference step, the traditional approach is a "diff in diff" analysis. This is typically a static regression model that evaluates the post-event change in the difference between the test and control markets. However, this assumes that observations are i.i.d. and that the differences between the test and control markets are constant. Both assumptions rarely hold true for time series data.
 
