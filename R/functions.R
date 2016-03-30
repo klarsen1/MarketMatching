@@ -7,8 +7,8 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
   ThisMarket <- all_markets[i]
   distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
   names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length")
-  messages <- 0
   for (j in 1:length(all_markets)){
+    isValidTest <- TRUE
     ThatMarket <- all_markets[j]
     distances[row, id] <- ThisMarket
     distances[row, "BestControl"] <- ThatMarket
@@ -16,11 +16,11 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     test <- mkts[[1]]
     ref <- mkts[[2]]
     dates <- mkts[[3]]
-    if ((var(test)==0 | length(test)<=2*warping_limit+1) & messages==0){
+    if ((var(test)==0 | length(test)<=2*warping_limit+1)){
       print(paste0("NOTE: test market ", ThisMarket, " has insufficient data or no variance and hence will be excluded"))
-      messages <- messages + 1
+      isValidTest <- FALSE
     }
-    if (ThisMarket != ThatMarket & messages==0 & var(ref)>0 & length(test)>2*warping_limit){
+    if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       if (dtw_emphasis>0){
         dist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abs(sum(test))
       } else{
