@@ -2,6 +2,13 @@ lagp <- function(x, p){
   return(c(rep(0,p), x[1:(length(x)-p)]))
 }
 
+CMean <- function(b) {
+  b <- b[b != 0]
+  if (length(b) > 0) 
+    return(mean(b))
+  return(0)
+}
+
 calculate_distances <- function(all_markets, data, id, i, warping_limit, matches, dtw_emphasis){
   row <- 1
   ThisMarket <- all_markets[i]
@@ -378,7 +385,8 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     step <- (max(0.1, prior_level_sd) - min(0.001, prior_level_sd))/20
     sd <- min(0.001, prior_level_sd) + step*i
     m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=sd))
-    b <- sum(colMeans(m$model$bsts.model$coefficients))
+    burn <- SuggestBurn(0.1, m$model$bsts.model)
+    b <- sum(apply(m$model$bsts.model$coefficients[-(1:burn),], 2, CMean))
     betas[i+1, "SD"] <- sd
     betas[i+1, "SumBeta"] <- b
     preperiod <- subset(m$series, cum.effect == 0)
@@ -404,12 +412,12 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
 
   cat("\t------------- Model Stats -------------\n")
   cat(paste0("\tMatching (pre) Period MAPE: ", round(100*results[[8]], 2) , "%\n"))
-  avg_coeffs <- data.frame(nrow=length(colMeans(impact$model$bsts.model$coefficients))-1, ncol=2)
+  avg_coeffs <- data.frame(nrow=dim(impact$model$bsts.model$coefficients)[2]-1, ncol=2)
   names(avg_coeffs) <- c("Market", "AverageBeta")
-  for (i in 2:length(colMeans(impact$model$bsts.model$coefficients))){
+  for (i in 2:dim(impact$model$bsts.model$coefficients)[2]){
     avg_coeffs[i-1, "Market"] <- control_market[i-1]
-    avg_coeffs[i-1, "AverageBeta"] <- colMeans(impact$model$bsts.model$coefficients)[i]
-    cat(paste0("\tBeta ", i-1, " [", control_market[i-1], "]: ", round(colMeans(impact$model$bsts.model$coefficients)[i], 4) , "\n"))
+    avg_coeffs[i-1, "AverageBeta"] <- apply(impact$model$bsts.model$coefficients[-(1:burn),], 2, CMean)[i]
+    cat(paste0("\tBeta ", i-1, " [", control_market[i-1], "]: ", round(avg_coeffs[i-1, "AverageBeta"], 4) , "\n"))
   }
   cat(paste0("\tDW: ", round(results[[9]], 2) , "\n"))
   cat("\n")
@@ -428,7 +436,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     geom_line(aes(y=Predicted, colour = "Expected"), size=1.2) +
     theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
-    scale_y_continuous(labels = comma, limits=c(ymin, ymax)) +
+    scale_y_continuous(labels = scales::comma, limits=c(ymin, ymax)) +
     ggtitle(paste0("Test Market: ",test_market))
   avp$test_market <- NULL
 
@@ -436,7 +444,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("cum.effect", "cum.effect.lower", "cum.effect.upper")])
   names(plotdf) <- c("Date", "Cumulative", "lower_bound", "upper_bound")
   results[[11]] <- ggplot(data=plotdf, aes(x=Date, y=Cumulative)) + geom_line(size=1.2) + theme_bw() +
-    scale_y_continuous(labels = comma) + ylab("Cumulative Effect") + xlab("") +
+    scale_y_continuous(labels = scales::comma) + ylab("Cumulative Effect") + xlab("") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
 
@@ -446,7 +454,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     geom_line() +
     theme_bw() + theme(legend.title = element_blank(), axis.title.x = element_blank()) + ylab("") + xlab("Date") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
-    scale_y_continuous(labels = comma, limits=c(ymin, ymax))
+    scale_y_continuous(labels = scales::comma, limits=c(ymin, ymax))
 
   ## plot betas at various local level SDs
   results[[13]] <- ggplot(data=betas, aes(x=SD, y=Beta)) +
@@ -461,7 +469,8 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD") +
     facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour=FALSE)
 
-  plotdf <- cbind.data.frame(date, impact$model$bsts.model$state.contributions[1000, 1, ]) %>% filter(date<=as.Date(MatchingEndDate))
+  burn <- SuggestBurn(0.1, impact$model$bsts.model)
+  plotdf <- cbind.data.frame(date, colMeans(impact$model$bsts.model$state.contributions[-(1:burn), "trend", ])) %>% filter(date<=as.Date(MatchingEndDate))
   names(plotdf) <- c("Date", "LocalLevel")
   results[[15]] <- ggplot(data=plotdf, aes(x=Date, y=LocalLevel)) +
     geom_line() +
@@ -480,7 +489,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   plotdf <- cbind.data.frame(as.Date(row.names(data.frame(impact$series))), data.frame(impact$series)[,c("point.effect", "point.effect.lower", "point.effect.upper")])
   names(plotdf) <- c("Date", "Pointwise", "lower_bound", "upper_bound")
   results[[17]] <- ggplot(data=plotdf, aes(x=Date, y=Pointwise)) + geom_line(size=1.2) + theme_bw() +
-    scale_y_continuous(labels = comma) + ylab("Point Effect") + xlab("") +
+    scale_y_continuous(labels = scales::comma) + ylab("Point Effect") + xlab("") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3)
   

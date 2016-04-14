@@ -10,7 +10,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2016-01-13" />
+<meta name="date" content="2016-01-14" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -54,7 +54,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">MarketMatching Package Vignette</h1>
 <h4 class="author"><em>Kim Larsen</em></h4>
-<h4 class="date"><em>2016-01-13</em></h4>
+<h4 class="date"><em>2016-01-14</em></h4>
 </div>
 
 
@@ -69,7 +69,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <p>The purpose of this document is to describe a robust approach to intervention analysis based on two key <code>R</code> packages: the <code>CausalImpact</code> package written by Kay Brodersen at Google and the <code>dtw</code> package available in CRAN. In addition, we will introduce an <code>R</code> package called <code>MarketMatching</code> which implements a simple workflow based on these two packages.</p>
 <div id="a-traditional-approach" class="section level2">
 <h2>A Traditional Approach</h2>
-<p>For the time series matching step the most straightforward approach is to use the Euclidian distance. However, this approach implicitly over-penalizes instances where relationships between markets are temporarily shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates.</p>
+<p>For the time series matching step the most straightforward approach is to use the Euclidian distance. However, this approach implicitly over-penalizes instances where relationships between markets are temporarily shifted. Although it is preferable for test and control markets to be aligned consistently, occasional historical shifts should not eliminate viable control market candidates. Or another option is to match based on correlation, but this does not factor in size.</p>
 <p>For the inference step, the traditional approach is a “diff in diff” analysis. This is typically a static regression model that evaluates the post-event change in the difference between the test and control markets. However, this assumes that observations are i.i.d. and that the differences between the test and control markets are constant. Both assumptions rarely hold true for time series data.</p>
 </div>
 <div id="a-more-flexible-and-robust-approach" class="section level2">
