@@ -15,7 +15,9 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
   distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
   names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length")
   messages <- 0
+  # For each market
   for (j in 1:length(all_markets)){
+    isValidTest <- TRUE
     ThatMarket <- all_markets[j]
     distances[row, id] <- ThisMarket
     distances[row, "BestControl"] <- ThatMarket
@@ -23,11 +25,13 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     test <- mkts[[1]]
     ref <- mkts[[2]]
     dates <- mkts[[3]]
-    if ((var(test)==0 | length(test)<=2*warping_limit+1) & messages==0){
-      print(paste0("NOTE: test market ", ThisMarket, " has insufficient data or no variance and hence will be excluded"))
+    # If insufficient data or no variance
+    if ((var(test)==0 | length(test)<=2*warping_limit+1)){
+      isValidTest <- FALSE
       messages <- messages + 1
     }
-    if (ThisMarket != ThatMarket & messages==0 & var(ref)>0 & length(test)>2*warping_limit){
+    # If data and variance are sufficient and test vector was valid
+    if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       if (dtw_emphasis>0){
         dist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abs(sum(test))
       } else{
@@ -38,6 +42,7 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
       distances[row, "Skip"] <- FALSE
       distances[row, "Length"] <- length(ref)
     } else{
+      messages <- messages + 1
       distances[row, "Skip"] <- TRUE
       distances[row, "RelativeDistance"] <- NA
       distances[row, "Correlation"] <- NA
@@ -45,8 +50,16 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     }
     row <- row + 1
   }
+  
+  if(messages > 0){
+    cat(paste0(messages, " markets were not matched with ", ThisMarket, " due to insufficient data or no variance."))
+  }
+  
   distances$matches <- matches
   distances$w <- dtw_emphasis
+  distances$MatchingStartDate <- min(data$date_var)
+  distances$MatchingEndDate <- max(data$date_var)
+  # Filter down to only the top matches
   distances <- dplyr::filter(distances, Skip==FALSE) %>%
     dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
@@ -57,8 +70,6 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w)
 
-  distances$MatchingStartDate <- min(dates)
-  distances$MatchingEndDate <- max(dates)
   return(distances)
 }
 
