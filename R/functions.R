@@ -47,6 +47,9 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
   }
   distances$matches <- matches
   distances$w <- dtw_emphasis
+  distances$MatchingStartDate <- min(dates)
+  distances$MatchingEndDate <- max(dates)
+  
   distances <- dplyr::filter(distances, Skip==FALSE) %>%
     dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
@@ -57,8 +60,6 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w)
 
-  distances$MatchingStartDate <- min(dates)
-  distances$MatchingEndDate <- max(dates)
   return(distances)
 }
 
