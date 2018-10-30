@@ -77,6 +77,7 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(date_variable %in% names(data), FALSE, "ERROR: date variable not found in input data")
   stopif(matching_variable %in% names(data), FALSE, "ERROR: matching metric not found in input data")
   stopif(length(unique(data[[id]]))>2, FALSE, "ERROR: Need at least 3 unique markets")
+  stopif(TRUE %in% is.na(data[[id]]), "ERROR: NAs found in the market column")
 }
 
 #' @importFrom reshape2 melt dcast
@@ -136,7 +137,8 @@ dw <- function(y, yhat){
 #'
 #' @import foreach
 #' @importFrom parallel detectCores
-#' @importFrom data.table rbindlist
+#' @importFrom data.table
+#' @importFrom CausalImpact
 #' @import dplyr
 #' @import iterators
 #' @import utils
@@ -245,6 +247,7 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 #'
 #' @param matched_markets A matched_market object created by the market_matching function
+#' @param bsts_modelargs A list() that passesm model parameters to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)
 #' @param test_market The name of the test market (character)
 #' @param end_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
 #' @param alpha Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals
@@ -317,7 +320,7 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' \item{\code{CausalImpactObject}}{The CausalImpact object created}
 #' \item{\code{Coefficients}}{The average posterior coefficients}
 
-inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5){
+inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, bsts_modelargs=NULL){
 
   ## copy the distances
   mm <- dplyr::filter(matched_markets$BestMatches, rank<=control_matches)
@@ -376,7 +379,11 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   pre.period <- c(as.Date(MatchingStartDate), as.Date(MatchingEndDate))
   post.period <- c(as.Date(post_period_start_date), as.Date(post_period_end_date))
   set.seed(2015)
-  impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=prior_level_sd))
+  if (is.null(bsts_modelargs)){
+     impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=prior_level_sd))
+  } else{
+    impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
+  }
 
   ## estimate betas for different values of prior sd
   betas <- data.frame(matrix(nrow=11, ncol=4))
