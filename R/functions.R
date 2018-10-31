@@ -134,6 +134,8 @@ dw <- function(y, yhat){
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
+#' @param match_ids List market ID's that you want to find a match for. This is useful if you have a smaller number of
+#' markets you want find a match for from a large pool of markets. Default is NULL, meaning all markets will be matched.
 #'
 #' @import foreach
 #' @importFrom parallel detectCores
@@ -170,7 +172,8 @@ dw <- function(y, yhat){
 #'              parallel=TRUE,
 #'              start_match_period=NULL,
 #'              end_match_period=NULL,
-#'              matches=5)
+#'              matches=5,
+#'              match_ids=NULL)
 #'
 #' @return Returns an object of type \code{market_matching}. The object has the
 #' following elements:
@@ -182,7 +185,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 
 
-best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=1, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1){
+best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=1, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1, match_ids=NULL){
 
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
@@ -209,6 +212,12 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 
   ## get a vector of all markets
   all_markets <- unique(data$id_var)
+  
+  if (is.null(match_ids)) {
+    match_indexes <- 1:length(all_markets)
+  } else {
+    match_indexes <- which(all_markets %in% match_ids)
+  }
 
   ## set up a list to hold all distance matrices
   all_distances <- list()
@@ -221,14 +230,14 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 
   ## loop through markets and compute distances
   if (parallel==FALSE){
-    for (i in 1:length(all_markets)){
+    for (i in match_indexes){
       all_distances[[i]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
     }
     shortest_distances <- data.frame(rbindlist(all_distances))
   } else{
     ncore <- detectCores()-1
     registerDoParallel(ncore)
-    loop_result <- foreach(i=1:length(all_markets)) %dopar% {
+    loop_result <- foreach(i=match_indexes) %dopar% {
       calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
     }
     shortest_distances <- data.frame(rbindlist(loop_result))
