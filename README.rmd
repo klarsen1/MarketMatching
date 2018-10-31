@@ -59,6 +59,9 @@ Hence, the package does *not* provide any new core functionality but it simplifi
 
 # How to Install
 ```{r, eval=FALSE}
+## use devtools version 1.11.1
+## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_1.11.1.tar.gz"
+## install.packages(packageurl, repos=NULL, type="source")
 library(devtools)
 install_github("klarsen1/MarketMatching", build_vignettes=TRUE)
 ```

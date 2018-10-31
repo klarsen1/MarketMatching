@@ -65,6 +65,9 @@ How to Install
 ==============
 
 ``` r
+## use devtools version 1.11.1
+## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_1.11.1.tar.gz"
+## install.packages(packageurl, repos=NULL, type="source")
 library(devtools)
 install_github("klarsen1/MarketMatching", build_vignettes=TRUE)
 ```
