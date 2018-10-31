@@ -78,7 +78,7 @@ For more details on the theory behind dynamic time warping and causal inference 
 
 ##-----------------------------------------------------------------------
 ## NOTE: if the install fails, use devtools version 2.0.0
-## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_2.0.0.tar.gz"
+## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_1.11.1.tar.gz"
 ## install.packages(packageurl, repos=NULL, type="source")
 ##-----------------------------------------------------------------------
 

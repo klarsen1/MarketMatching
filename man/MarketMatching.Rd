@@ -37,8 +37,8 @@ For more details, check out the vignette: browseVignettes("MarketMatching")
 \examples{
 
 ##-----------------------------------------------------------------------
-## NOTE: if the install fails, use devtools version 2.0.0
-## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_2.0.0.tar.gz"
+## NOTE: if the install fails, use devtools version 1.11.1
+## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_1.11.1.tar.gz"
 ## install.packages(packageurl, repos=NULL, type="source")
 ##-----------------------------------------------------------------------
 
