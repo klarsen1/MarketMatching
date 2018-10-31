@@ -33,7 +33,14 @@
 #'
 #'
 #' @name MarketMatching
-#' @examples 
+#' @examples
+#' 
+#' ##-----------------------------------------------------------------------
+#' ## NOTE: if the install fails, use devtools version 2.0.0
+#' ## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_2.0.0.tar.gz"
+#' ## install.packages(packageurl, repos=NULL, type="source")
+#' ##-----------------------------------------------------------------------
+#'
 #' ##-----------------------------------------------------------------------
 #' ## Find best matches for each airport time series
 #' ##-----------------------------------------------------------------------
@@ -56,7 +63,6 @@
 #' ## Since this is weather data it is a not a very meaningful example. 
 #' ## This is merely to demonstrate the function.
 #' ##-----------------------------------------------------------------------
-#' library(CausalImpact)
 #' results <- MarketMatching::inference(matched_markets = mm, 
 #'                                      test_market = "CPH", 
 #'                                      end_post_period = "2015-10-01", 

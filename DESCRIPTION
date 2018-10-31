@@ -1,7 +1,7 @@
 Package: MarketMatching
 Type: Package
 Title: Market matching and causal impact inference
-Version: 0.0.1
+Version: 1.1.1
 Date: 2015-12-04
 Authors@R: person("Larsen", "Kim", email = "kblarsen4@gmail.com", role = c("aut", "cre"))
 Description: For a given test market find the best control markets using time series matching and analyze the impact of an intervention. The intervention could be be a marketing event or some other local business tactic that is being tested. The workflow implemented in MarketMatching utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. In fact, this package can be considered a wrapper for those two packages. 
@@ -11,3 +11,5 @@ Imports: data.table, ggplot2, dplyr, utils, iterators, doParallel, parallel, for
 LazyData: true
 VignetteBuilder: knitr
 Suggests: knitr, rmarkdown
+RoxygenNote: 6.1.0
+

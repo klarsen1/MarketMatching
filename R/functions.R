@@ -137,8 +137,9 @@ dw <- function(y, yhat){
 #'
 #' @import foreach
 #' @importFrom parallel detectCores
-#' @importFrom data.table
-#' @importFrom CausalImpact
+#' @importFrom data.table rbindlist
+#' @import CausalImpact
+#' @importFrom bsts SuggestBurn
 #' @import dplyr
 #' @import iterators
 #' @import utils
