@@ -371,7 +371,11 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   cat(paste0("\tPost Period Start Date: ", post_period_start_date, "\n"))
   cat(paste0("\tPost Period End Date: ", post_period_end_date, "\n"))
   cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
-  cat(paste0("\tLocal Level Prior SD: ", prior_level_sd, "\n"))
+  if (is.null(bsts_modelargs)==TRUE){
+     cat(paste0("\tLocal Level Prior SD: ", prior_level_sd, "\n"))
+  } else{
+     cat(paste0("\tLocal Level Prior SD: specified in bsts_modelargs"), "\n")
+  }
   cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
   cat("\n")
   cat("\n")
