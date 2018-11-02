@@ -12,11 +12,14 @@ best_matches(data=NULL,
              parallel=TRUE,
              start_match_period=NULL,
              end_match_period=NULL,
-             matches=5)
+             matches=5,
+             match_ids=NULL)
 }
 \arguments{
 \item{data}{input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
 In other words, markets are rows and not columns -- we have a unique row for each area/time combination.}
+
+\item{test_market}{Use this parameter if you only want to get control matches for a single test market (intead of all combinations)}
 
 \item{id_variable}{the name of the variable that identifies the markets}
 
@@ -40,6 +43,10 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 \item{dtw_emphasis}{Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 An emphasis of 0.5 would yield equal weighting.}
+
+\item{match_ids}{List market IDs that you want to find a match for. This is useful if you have a smaller number of
+markets you want find a match for from a large pool of markets. Default is NULL, meaning all markets will be matched.
+If you're using the test_market parameter, make sure your test_market is uncluded in this list.}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the

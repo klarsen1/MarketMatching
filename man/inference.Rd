@@ -26,6 +26,8 @@ Note that more wiggly local level terms also translate into larger posterior int
 \item{control_matches}{Number of matching control markets to use in the analysis}
 
 \item{bsts_modelargs}{A list() that passesm model parameters to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)}
+
+\item{analyze_betas}{Controls whether to test the model under a variety of different values for prior_level_sd.}
 }
 \value{
 Returns an object of type \code{inference}. The object has the

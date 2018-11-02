@@ -15,7 +15,9 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
   distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
   names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length")
   messages <- 0
+  # For each market
   for (j in 1:length(all_markets)){
+    isValidTest <- TRUE
     ThatMarket <- all_markets[j]
     distances[row, id] <- ThisMarket
     distances[row, "BestControl"] <- ThatMarket
@@ -23,11 +25,13 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     test <- mkts[[1]]
     ref <- mkts[[2]]
     dates <- mkts[[3]]
-    if ((var(test)==0 | length(test)<=2*warping_limit+1) & messages==0){
-      print(paste0("NOTE: test market ", ThisMarket, " has insufficient data or no variance and hence will be excluded"))
+    # If insufficient data or no variance
+    if ((var(test)==0 | length(test)<=2*warping_limit+1)){
+      isValidTest <- FALSE
       messages <- messages + 1
     }
-    if (ThisMarket != ThatMarket & messages==0 & var(ref)>0 & length(test)>2*warping_limit){
+    # If data and variance are sufficient and test vector was valid
+    if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       if (dtw_emphasis>0){
         dist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abs(sum(test))
       } else{
@@ -38,6 +42,9 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
       distances[row, "Skip"] <- FALSE
       distances[row, "Length"] <- length(ref)
     } else{
+      if (ThisMarket != ThatMarket){
+         messages <- messages + 1
+      }
       distances[row, "Skip"] <- TRUE
       distances[row, "RelativeDistance"] <- NA
       distances[row, "Correlation"] <- NA
@@ -45,8 +52,16 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     }
     row <- row + 1
   }
+  
+  if(messages > 0){
+    cat(paste0(messages, " markets were not matched with ", ThisMarket, " due to insufficient data or no variance."))
+  }
+  
   distances$matches <- matches
   distances$w <- dtw_emphasis
+  distances$MatchingStartDate <- min(data$date_var)
+  distances$MatchingEndDate <- max(data$date_var)
+  # Filter down to only the top matches
   distances <- dplyr::filter(distances, Skip==FALSE) %>%
     dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
@@ -56,9 +71,7 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w)
-
-  distances$MatchingStartDate <- min(dates)
-  distances$MatchingEndDate <- max(dates)
+  
   return(distances)
 }
 
@@ -78,6 +91,9 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(matching_variable %in% names(data), FALSE, "ERROR: matching metric not found in input data")
   stopif(length(unique(data[[id]]))>2, FALSE, "ERROR: Need at least 3 unique markets")
   stopif(TRUE %in% is.na(data[[id]]), "ERROR: NAs found in the market column")
+  stopif(TRUE %in% is.na(data[[matching_variable]]), "ERROR: NAs found in the matching variable")
+  stopif(class(data[[date_variable]]) != "Date", "ERROR: date_variable is not a Date. Check your data frame.")
+  
 }
 
 #' @importFrom reshape2 melt dcast
@@ -91,9 +107,11 @@ create_market_vectors <- function(data, test_market, ref_market){
     f <- dplyr::inner_join(test, ref, by="date_var")
     return(list(as.numeric(f$y), as.numeric(f$x1), as.Date(f$date_var)))
   } else if (length(ref_market)>1){
+    d <- dplyr::distinct(d, id_var, date_var, .keep_all = TRUE)
     ref <- reshape2::dcast(subset(d, id_var %in% ref_market), date_var ~ id_var, value.var="match_var")
     names(ref) <- c("date_var", paste0("x", seq(1:length(ref_market))))
     f <- data.frame(dplyr::inner_join(test, ref, by="date_var"))
+    f <- na.omit(f)
     return(list(as.numeric(f$y), dplyr::select(f, num_range("x", 1:length(ref_market))), as.Date(f$date_var)))
   }
 }
@@ -131,12 +149,13 @@ dw <- function(y, yhat){
 #' @param end_match_period the end date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output
+#' @param test_market Use this parameter if you only want to get control matches for a single test market (intead of all combinations)
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
-#' @param match_ids List market ID's that you want to find a match for. This is useful if you have a smaller number of
+#' @param match_ids List market IDs that you want to find a match for. This is useful if you have a smaller number of
 #' markets you want find a match for from a large pool of markets. Default is NULL, meaning all markets will be matched.
-#'
+#' If you're using the test_market parameter, make sure your test_market is uncluded in this list.
 #' @import foreach
 #' @importFrom parallel detectCores
 #' @importFrom data.table rbindlist
@@ -185,7 +204,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 
 
-best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=1, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1, match_ids=NULL){
+best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=1, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1, match_ids=NULL){
 
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
@@ -218,6 +237,10 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
   } else {
     match_indexes <- which(all_markets %in% match_ids)
   }
+  
+  if (is.null(test_market)==FALSE & is.null(match_ids)==FALSE){
+    stopif(!(test_market %in% match_ids), "ERROR: the test_market is not in the provided match_ids list")
+  }
 
   ## set up a list to hold all distance matrices
   all_distances <- list()
@@ -228,22 +251,31 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
   ## check if any data is left
   stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
 
-  ## loop through markets and compute distances
-  if (parallel==FALSE){
-    for (i in match_indexes){
-      all_distances[[i]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
-    }
+  ## If treatment_id is known a priori, no need to match all markets with all others
+  if(!is.null(test_market)){
+    stopif(test_market %in% unique(all_markets), FALSE, paste0("test market ", test_market, " does not exist"))
+    
+    i <- which(all_markets == test_market)
+    all_distances[[1]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
     shortest_distances <- data.frame(rbindlist(all_distances))
-  } else{
-    ncore <- detectCores()-1
-    registerDoParallel(ncore)
-    loop_result <- foreach(i=match_indexes) %dopar% {
-      calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+  }else{
+    ## loop through markets and compute distances
+    if (parallel==FALSE){
+      for (i in 1:length(all_markets)){
+        all_distances[[i]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+      }
+      shortest_distances <- data.frame(rbindlist(all_distances))
+    } else{
+      ncore <- detectCores()-1
+      registerDoParallel(ncore)
+      loop_result <- foreach(i=1:length(all_markets)) %dopar% {
+        calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+      }
+      shortest_distances <- data.frame(rbindlist(loop_result))
+      stopImplicitCluster()
     }
-    shortest_distances <- data.frame(rbindlist(loop_result))
-    stopImplicitCluster()
   }
-
+  
   ### Return the results
   object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable)
   class(object) <- "matched_market"
@@ -264,6 +296,7 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' @param prior_level_sd Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
 #' Note that more wiggly local level terms also translate into larger posterior intervals.
 #' @param control_matches Number of matching control markets to use in the analysis
+#' @param analyze_betas Controls whether to test the model under a variety of different values for prior_level_sd.
 
 #' @importFrom scales comma
 #' @import ggplot2
@@ -330,7 +363,7 @@ best_matches <- function(data=NULL, id_variable=NULL, date_variable=NULL, matchi
 #' \item{\code{CausalImpactObject}}{The CausalImpact object created}
 #' \item{\code{Coefficients}}{The average posterior coefficients}
 
-inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, bsts_modelargs=NULL){
+inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, bsts_modelargs=NULL, analyze_betas=TRUE){
 
   ## copy the distances
   mm <- dplyr::filter(matched_markets$BestMatches, rank<=control_matches)
@@ -399,22 +432,31 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
   }
 
-  ## estimate betas for different values of prior sd
-  betas <- data.frame(matrix(nrow=11, ncol=4))
-  names(betas) <- c("SD", "SumBeta", "DW", "MAPE")
-  for (i in 0:20){
-    step <- (max(0.1, prior_level_sd) - min(0.001, prior_level_sd))/20
-    sd <- min(0.001, prior_level_sd) + step*i
-    m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=sd))
-    burn <- SuggestBurn(0.1, m$model$bsts.model)
-    b <- sum(apply(m$model$bsts.model$coefficients[-(1:burn),], 2, CMean))
-    betas[i+1, "SD"] <- sd
-    betas[i+1, "SumBeta"] <- b
-    preperiod <- subset(m$series, cum.effect == 0)
-    betas[i+1, "DW"] <- dw(preperiod$response, preperiod$point.pred)
-    betas[i+1, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
+  if(analyze_betas==TRUE){
+    ## estimate betas for different values of prior sd
+    betas <- data.frame(matrix(nrow=11, ncol=4))
+    names(betas) <- c("SD", "SumBeta", "DW", "MAPE")
+    for (i in 0:20){
+      step <- (max(0.1, prior_level_sd) - min(0.001, prior_level_sd))/20
+      sd <- min(0.001, prior_level_sd) + step*i
+      if (is.null(bsts_modelargs)){
+        m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=prior_level_sd))
+      } else{
+        m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
+      }
+      burn <- SuggestBurn(0.1, m$model$bsts.model)
+      b <- sum(apply(m$model$bsts.model$coefficients[-(1:burn),], 2, CMean))
+      betas[i+1, "SD"] <- sd
+      betas[i+1, "SumBeta"] <- b
+      preperiod <- subset(m$series, cum.effect == 0)
+      betas[i+1, "DW"] <- dw(preperiod$response, preperiod$point.pred)
+      betas[i+1, "MAPE"] <- mape_no_zeros(preperiod$response, preperiod$point.pred)
+    }
   }
-
+  
+  burn <- SuggestBurn(0.1, impact$model$bsts.model)
+  
+  
   ## create statistics
   results <- list()
   results[[1]] <- impact$summary$AbsEffect[2]
@@ -477,19 +519,21 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
     scale_y_continuous(labels = scales::comma, limits=c(ymin, ymax))
 
-  ## plot betas at various local level SDs
-  results[[13]] <- ggplot(data=betas, aes(x=SD, y=Beta)) +
-    geom_line() +
-    theme_bw() + theme(legend.title = element_blank()) +
-    geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD")
-
-  ## plot DWs and MAPEs at different SDs
-  plotdf <- melt(data=betas, id="SD")
-  results[[14]] <- ggplot(data=plotdf, aes(x=SD, y=value, colour=variable)) + geom_line() +
-    theme_bw() + theme(legend.title = element_blank()) +
-    geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD") +
-    facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour=FALSE)
-
+  if(analyze_betas==TRUE){
+    ## plot betas at various local level SDs
+    results[[13]] <- ggplot(data=betas, aes(x=SD, y=Beta)) +
+      geom_line() +
+      theme_bw() + theme(legend.title = element_blank()) +
+      geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD")
+    
+    ## plot DWs and MAPEs at different SDs
+    plotdf <- melt(data=betas, id="SD")
+    results[[14]] <- ggplot(data=plotdf, aes(x=SD, y=value, colour=variable)) + geom_line() +
+      theme_bw() + theme(legend.title = element_blank()) +
+      geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD") +
+      facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour=FALSE)
+  }
+  
   burn <- SuggestBurn(0.1, impact$model$bsts.model)
   plotdf <- cbind.data.frame(date, colMeans(impact$model$bsts.model$state.contributions[-(1:burn), "trend", ])) %>% filter(date<=as.Date(MatchingEndDate))
   names(plotdf) <- c("Date", "LocalLevel")
