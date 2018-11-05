@@ -5,21 +5,23 @@
 \title{For each market, find the best matching control market}
 \usage{
 best_matches(data=NULL,
+             markets_to_be_matched=NULL,
              id_variable=NULL,
              date_variable=NULL,
              matching_variable=NULL,
-             warping_limit=1,
              parallel=TRUE,
+             warping_limit=1,
              start_match_period=NULL,
              end_match_period=NULL,
              matches=5,
-             match_ids=NULL)
+             dtw_emphasis=1)
 }
 \arguments{
 \item{data}{input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
 In other words, markets are rows and not columns -- we have a unique row for each area/time combination.}
 
-\item{test_market}{Use this parameter if you only want to get control matches for a single test market (intead of all combinations)}
+\item{markets_to_be_matched}{Use this parameter if you only want to get control matches for a subset of markets or a single market
+The default is NULL which means that all markets will be paired with matching markets}
 
 \item{id_variable}{the name of the variable that identifies the markets}
 
@@ -27,10 +29,10 @@ In other words, markets are rows and not columns -- we have a unique row for eac
 
 \item{matching_variable}{the variable (metric) used to match the markets. For example, this could be sales or new customers}
 
+\item{parallel}{set to TRUE for parallel processing. Default is TRUE}
+
 \item{warping_limit}{the warping limit used for matching. Default is 1, 
 which means that a single query value can be mapped to at most 2 reference values.}
-
-\item{parallel}{set to TRUE for parallel processing. Default is TRUE}
 
 \item{start_match_period}{the start date of the matching period (pre period).
 Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"}
@@ -43,10 +45,6 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 \item{dtw_emphasis}{Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 An emphasis of 0.5 would yield equal weighting.}
-
-\item{match_ids}{List market IDs that you want to find a match for. This is useful if you have a smaller number of
-markets you want find a match for from a large pool of markets. Default is NULL, meaning all markets will be matched.
-If you're using the test_market parameter, make sure your test_market is uncluded in this list.}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the
@@ -65,11 +63,13 @@ market in a parallel fashion, and then ranks by distance and/or correlation.
 }
 \examples{
 ##-----------------------------------------------------------------------
-## Find best matches for each airport time series
+## Find the best matches for the CPH airport time series
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather, id="Area",
+mm <- best_matches(data=weather, 
+                   id="Area",
+                   markets_to_be_matched=c("CPH", "SFO"),
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
                    parallel=FALSE,

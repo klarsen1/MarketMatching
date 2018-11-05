@@ -9,7 +9,18 @@ CMean <- function(b) {
   return(0)
 }
 
+#' @importFrom stats cor var lm na.omit
+
 calculate_distances <- function(all_markets, data, id, i, warping_limit, matches, dtw_emphasis){
+  ## Nulling to avoid CRAN notes
+  Skip <- NULL
+  RelativeDistance <- NULL
+  Correlation <- NULL
+  w <- NULL
+  dist_rank <- NULL
+  corr_rank <- NULL
+  combined_rank <- NULL
+
   row <- 1
   ThisMarket <- all_markets[i]
   distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
@@ -26,7 +37,7 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
     ref <- mkts[[2]]
     dates <- mkts[[3]]
     # If insufficient data or no variance
-    if ((var(test)==0 | length(test)<=2*warping_limit+1)){
+    if ((stats::var(test)==0 | length(test)<=2*warping_limit+1)){
       isValidTest <- FALSE
       messages <- messages + 1
     }
@@ -98,6 +109,11 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
 
 #' @importFrom reshape2 melt dcast
 create_market_vectors <- function(data, test_market, ref_market){
+  ## nulling to avoid CRAN notes
+  id_var <- NULL
+  date_var <- NULL
+  match_var <- NULL
+  
   d <- subset(data, !is.na(match_var))
   test <- subset(d, id_var==test_market)[,c("date_var", "match_var")]
   names(test)[2] <- "y"
@@ -111,7 +127,7 @@ create_market_vectors <- function(data, test_market, ref_market){
     ref <- reshape2::dcast(subset(d, id_var %in% ref_market), date_var ~ id_var, value.var="match_var")
     names(ref) <- c("date_var", paste0("x", seq(1:length(ref_market))))
     f <- data.frame(dplyr::inner_join(test, ref, by="date_var"))
-    f <- na.omit(f)
+    f <- stats::na.omit(f)
     return(list(as.numeric(f$y), dplyr::select(f, num_range("x", 1:length(ref_market))), as.Date(f$date_var)))
   }
 }
@@ -119,13 +135,13 @@ create_market_vectors <- function(data, test_market, ref_market){
 mape_no_zeros <- function(test, ref){
   d <- cbind.data.frame(test, ref)
   d <- subset(d, abs(test)>0)
-  return(mean(abs(lm(test ~ ref, data=d)$residuals)/d$test))
+  return(mean(abs(stats::lm(test ~ ref, data=d)$residuals)/abs(d$test)))
 }
 
 dw <- function(y, yhat){
   res <- y - yhat
   lagres <- lagp(res, 1)
-  r <- cor(res[2:length(res)], lagres[2:length(lagres)])
+  r <- stats::cor(res[2:length(res)], lagres[2:length(lagres)])
   return(2*(1-r))
 }
 
@@ -138,6 +154,8 @@ dw <- function(y, yhat){
 #'
 #' @param data input data.frame for analysis. The dataset should be structured as "stacked" time series (i.e., a panel dataset).
 #' In other words, markets are rows and not columns -- we have a unique row for each area/time combination.
+#' @param markets_to_be_matched Use this parameter if you only want to get control matches for a subset of markets or a single market
+#' The default is NULL which means that all markets will be paired with matching markets
 #' @param id_variable the name of the variable that identifies the markets
 #' @param date_variable the time stamp variable
 #' @param matching_variable the variable (metric) used to match the markets. For example, this could be sales or new customers
@@ -149,18 +167,13 @@ dw <- function(y, yhat){
 #' @param end_match_period the end date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output
-#' @param test_market Use this parameter if you only want to get control matches for a single test market (intead of all combinations)
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
-#' @param match_ids List market IDs that you want to find a match for. This is useful if you have a smaller number of
-#' markets you want find a match for from a large pool of markets. Default is NULL, meaning all markets will be matched.
-#' If you're using the test_market parameter, make sure your test_market is uncluded in this list.
 #' @import foreach
 #' @importFrom parallel detectCores
 #' @importFrom data.table rbindlist
 #' @import CausalImpact
-#' @importFrom bsts SuggestBurn
 #' @import dplyr
 #' @import iterators
 #' @import utils
@@ -170,11 +183,13 @@ dw <- function(y, yhat){
 #' @export best_matches
 #' @examples
 #' ##-----------------------------------------------------------------------
-#' ## Find best matches for each airport time series
+#' ## Find the best matches for the CPH airport time series
 #' ##-----------------------------------------------------------------------
 #' library(MarketMatching)
 #' data(weather, package="MarketMatching")
-#' mm <- best_matches(data=weather, id="Area",
+#' mm <- best_matches(data=weather, 
+#'                    id="Area",
+#'                    markets_to_be_matched=c("CPH", "SFO"),
 #'                    date_variable="Date",
 #'                    matching_variable="Mean_TemperatureF",
 #'                    parallel=FALSE,
@@ -184,15 +199,16 @@ dw <- function(y, yhat){
 #'
 #' @usage
 #' best_matches(data=NULL,
+#'              markets_to_be_matched=NULL,
 #'              id_variable=NULL,
 #'              date_variable=NULL,
 #'              matching_variable=NULL,
-#'              warping_limit=1,
 #'              parallel=TRUE,
+#'              warping_limit=1,
 #'              start_match_period=NULL,
 #'              end_match_period=NULL,
 #'              matches=5,
-#'              match_ids=NULL)
+#'              dtw_emphasis=1)
 #'
 #' @return Returns an object of type \code{market_matching}. The object has the
 #' following elements:
@@ -204,8 +220,13 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 
 
-best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, warping_limit=1, parallel=TRUE, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1, match_ids=NULL){
+best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1){
 
+  ## Nulling to avoid angry notes
+  match_var <- NULL
+  id_var <- NULL
+  date_var <- NULL
+  
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
   stopif(is.null(end_match_period), TRUE, "No end date provided")
@@ -232,16 +253,6 @@ best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_var
   ## get a vector of all markets
   all_markets <- unique(data$id_var)
   
-  if (is.null(match_ids)) {
-    match_indexes <- 1:length(all_markets)
-  } else {
-    match_indexes <- which(all_markets %in% match_ids)
-  }
-  
-  if (is.null(test_market)==FALSE & is.null(match_ids)==FALSE){
-    stopif(!(test_market %in% match_ids), "ERROR: the test_market is not in the provided match_ids list")
-  }
-
   ## set up a list to hold all distance matrices
   all_distances <- list()
 
@@ -251,12 +262,13 @@ best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_var
   ## check if any data is left
   stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
 
-  ## If treatment_id is known a priori, no need to match all markets with all others
-  if(!is.null(test_market)){
-    stopif(test_market %in% unique(all_markets), FALSE, paste0("test market ", test_market, " does not exist"))
-    
-    i <- which(all_markets == test_market)
-    all_distances[[1]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+  if(!is.null(markets_to_be_matched)){
+    markets_to_be_matched <- unique(markets_to_be_matched)
+    for (k in 1:length(markets_to_be_matched)){
+       stopif(markets_to_be_matched[k] %in% unique(all_markets), FALSE, paste0("test market ", markets_to_be_matched[k], " does not exist"))
+       i <- which(all_markets == markets_to_be_matched[k])
+       all_distances[[k]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+    }
     shortest_distances <- data.frame(rbindlist(all_distances))
   }else{
     ## loop through markets and compute distances
@@ -289,18 +301,20 @@ best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_var
 #' The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 #'
 #' @param matched_markets A matched_market object created by the market_matching function
-#' @param bsts_modelargs A list() that passesm model parameters to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)
+#' @param bsts_modelargs A list() that passes model parameters directly to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)
+#' This parameter will overwrite the values specified in prior_level_sd and nseasons. ONLY use this if you're using intricate bsts settings
+#' For most use-cases, using the prior_level_sd and nseasons parameters should be sufficient
 #' @param test_market The name of the test market (character)
 #' @param end_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
 #' @param alpha Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals
 #' @param prior_level_sd Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
-#' Note that more wiggly local level terms also translate into larger posterior intervals.
+#' Note that more wiggly local level terms also translate into larger posterior intervals
+#' This parameter will be overwritten if you're using the bsts_modelargs parameter
 #' @param control_matches Number of matching control markets to use in the analysis
 #' @param analyze_betas Controls whether to test the model under a variety of different values for prior_level_sd.
+#' @param nseasons Seasonality for the bsts model -- e.g., 52 for weekly seasonality
 
-#' @importFrom scales comma
 #' @import ggplot2
-#' @import zoo
 
 #' @export inference
 #' @examples
@@ -311,7 +325,9 @@ best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_var
 #' ## This is merely to demonstrate the function.
 #' ##-----------------------------------------------------------------------
 #' data(weather, package="MarketMatching")
-#' mm <- best_matches(data=weather, id="Area",
+#' mm <- best_matches(data=weather, 
+#'                    id="Area",
+#'                    markets_to_be_matched=c("CPH", "SFO"),
 #'                    date_variable="Date",
 #'                    matching_variable="Mean_TemperatureF",
 #'                    parallel=FALSE,
@@ -323,15 +339,19 @@ best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_var
 #' library(CausalImpact)
 #' results <- inference(matched_markets=mm,
 #'                      test_market="CPH",
+#'                      analyze_betas=FALSE,
 #'                      end_post_period="2015-12-15",
 #'                      prior_level_sd=0.002)
 #' @usage
 #' inference(matched_markets=NULL,
+#'           bsts_modelargs=NULL,
 #'           test_market=NULL,
 #'           end_post_period=NULL,
 #'           alpha=0.05,
 #'           prior_level_sd=0.01,
-#'           control_matches=5)
+#'           control_matches=5, 
+#'           analyze_betas=FALSE, 
+#'           nseasons=NULL)
 #'
 #' @return Returns an object of type \code{inference}. The object has the
 #' following elements:
@@ -362,9 +382,58 @@ best_matches <- function(data=NULL, test_market=NULL, id_variable=NULL, date_var
 #' \item{\code{Predictions}}{Actual versus predicted values}
 #' \item{\code{CausalImpactObject}}{The CausalImpact object created}
 #' \item{\code{Coefficients}}{The average posterior coefficients}
+#' 
+#' @import zoo
+#' @importFrom bsts SuggestBurn
+#' @importFrom scales comma
 
-inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, bsts_modelargs=NULL, analyze_betas=TRUE){
+inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, analyze_betas=FALSE, nseasons=NULL){
 
+  ## use nulling to avoid CRAN notes
+  id_var <- NULL
+  BestControl <- NULL
+  date_var <- NULL
+  cum.effect <- NULL
+  Date <- NULL
+  Response <- NULL
+  lower_bound <- NULL
+  upper_bound <- NULL
+  Predicted <- NULL
+  Cumulative <- NULL
+  match_var <- NULL
+  SD <- NULL
+  Beta <- NULL
+  value <- NULL
+  variable <- NULL
+  LocalLevel <- NULL
+  Residuals <- NULL
+  Pointwise <- NULL
+  
+  stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
+  
+  ## Model settings
+  if (!is.null(bsts_modelargs) & !is.null(nseasons)){
+    cat("\tNOTE: You're passing model arguments directly to bsts, but also using the nseasons parameter \n")
+    cat("\tDid you mean to do this? Note that bsts_modelargs will overwrite nseasons \n")
+    cat("\n")
+    cat("\n")
+  }
+  if (is.null(bsts_modelargs)){
+    if (is.null(nseasons)){
+      bsts_modelargs <- list(prior.level.sd=prior_level_sd)
+    } else{
+      bsts_modelargs <- list(nseasons=nseasons, prior.level.sd=prior_level_sd)
+    }
+  } else{
+    if (analyze_betas==TRUE){
+      analyze_betas <- FALSE
+      cat("\tNOTE: analyze_betas turned off when bsts model arguments are passed directly \n")
+      cat("\tConsider using the nseasons and prior_level_sd parameters instead \n")
+      cat("\n")
+      cat("\n")
+    }
+  }
+  
   ## copy the distances
   mm <- dplyr::filter(matched_markets$BestMatches, rank<=control_matches)
 
@@ -373,7 +442,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   mm <- dplyr::arrange(mm, id_var, BestControl)
 
   ## check if the test market exists
-  stopif(test_market %in% unique(data$id_var), FALSE, paste0("test market ", test_market, " does not exist"))
+  stopif(test_market %in% unique(data$id_var), FALSE, paste0("ERROR: Test market ", test_market, " does not exist"))
 
   ## if an end date has not been provided, then choose the max of the data
   if (is.null(end_post_period)){
@@ -413,10 +482,13 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   cat(paste0("\tPost Period Start Date: ", post_period_start_date, "\n"))
   cat(paste0("\tPost Period End Date: ", post_period_end_date, "\n"))
   cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
-  if (is.null(bsts_modelargs)==TRUE){
-     cat(paste0("\tLocal Level Prior SD: ", prior_level_sd, "\n"))
-  } else{
-     cat(paste0("\tLocal Level Prior SD: specified in bsts_modelargs"), "\n")
+  cat(paste0("\tbsts parameters: \n"))
+  modelparms <- names(bsts_modelargs)
+  for (p in 1:length(bsts_modelargs)){
+    cat(paste0("\t  ", modelparms[p], ": ", bsts_modelargs[p], "\n"))
+  }
+  if (!("nseasons" %in% modelparms)){
+    cat("\t  No seasonality specified. Seasonality will be controlled for by the matched markets \n")
   }
   cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
   cat("\n")
@@ -426,11 +498,7 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
   pre.period <- c(as.Date(MatchingStartDate), as.Date(MatchingEndDate))
   post.period <- c(as.Date(post_period_start_date), as.Date(post_period_end_date))
   set.seed(2015)
-  if (is.null(bsts_modelargs)){
-     impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=prior_level_sd))
-  } else{
-    impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
-  }
+  impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
 
   if(analyze_betas==TRUE){
     ## estimate betas for different values of prior sd
@@ -439,11 +507,12 @@ inference <- function(matched_markets=NULL, test_market=NULL, end_post_period=NU
     for (i in 0:20){
       step <- (max(0.1, prior_level_sd) - min(0.001, prior_level_sd))/20
       sd <- min(0.001, prior_level_sd) + step*i
-      if (is.null(bsts_modelargs)){
-        m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=list(prior.level.sd=prior_level_sd))
+      if (is.null(nseasons)){
+        args <- list(prior.level.sd=sd)
       } else{
-        m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
+        args <- list(prior.level.sd=sd, nseasons=nseasons)
       }
+      m <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=args)
       burn <- SuggestBurn(0.1, m$model$bsts.model)
       b <- sum(apply(m$model$bsts.model$coefficients[-(1:burn),], 2, CMean))
       betas[i+1, "SD"] <- sd

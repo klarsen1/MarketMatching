@@ -1,9 +1,9 @@
 #' Weather dataset
 #'
 #' The data was extracted using the weatherData package
-#' It contains average temperature readings for 20 market for 2014 (365 days)
+#' It contains average temperature readings for 19 airports for 2014.
 #'
-#' @format A time series dataset with 7,300 rows and 3 variables (20 airports and 356 days):
+#' @format A time series dataset with 6,935 rows and 3 variables (19 airports and 365 days):
 #' \itemize{
 #'   \item Area: Airport code
 #'   \item Date: Date

@@ -1,4 +1,3 @@
-
 Introduction
 ============
 
@@ -61,8 +60,8 @@ Summary of features:
 -   Allows the user to choose how many markets are sent to the slab-and-prior model.
 -   All plots are done in `ggplot2` and can easily be extracted and manipulated.
 
-How to Install
-==============
+How to Install from Github
+==========================
 
 ``` r
 ## use devtools version 1.11.1
@@ -89,26 +88,44 @@ mm <- best_matches(data=weather,
                    id_variable="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
-                   parallel=TRUE,
+                   parallel=FALSE,
                    warping_limit=1, # warping limit=1
                    dtw_emphasis=1, # rely only on dtw for pre-screening
                    matches=5, # request 5 matches
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
+
+##-----------------------------------------------------------------------
+## Or just search for 5 control markets for CPH and SFO
+##-----------------------------------------------------------------------
+mm_only_cph <- best_matches(data=weather,
+                   id_variable="Area",
+                   date_variable="Date",
+                   markets_to_be_matched=c"CPH", "SFO"),
+                   matching_variable="Mean_TemperatureF",
+                   parallel=FALSE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=1, # rely only on dtw for pre-screening
+                   matches=5, # request 5 matches
+                   start_match_period="2014-01-01",
+                   end_match_period="2014-10-01")
+
+
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
 ## Since this is weather data it is a not a very meaningful example.
-## This is merely to demonstrate the function.
+## This is merely to demonstrate the functionality.
 ##-----------------------------------------------------------------------
 results <- MarketMatching::inference(matched_markets = mm,
                                     test_market = "CPH",
                                     end_post_period = "2015-10-01")
 
 ##-----------------------------------------------------------------------
-## You can also pass specific bsts model arguments
+## You can also pass specific bsts model arguments (see bsts documentation)
 ##-----------------------------------------------------------------------
 results <- MarketMatching::inference(matched_markets = mm,
                                     test_market = "CPH",
+                                    analyze_betas=TRUE,
                                     bsts_modelargs = list(niter=2000, prior.level.sd=0.001),
                                     end_post_period = "2015-10-01")
 ```
@@ -166,8 +183,8 @@ knitr::kable(head(coeff))
 References
 ==========
 
-\[1\] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). <http://google.github.io/CausalImpact/>
+\[1\] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015).
 
-\[2\] Vignette for the `dtw` package: <https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf>.
+\[2\] The vignette for the `dtw` package (browseVignettes("dtw"))
 
 \[3\] Predicting the Present with Bayesian Structural Time Series, Steven L. Scott and Hal Varian, <http://people.ischool.berkeley.edu/~hal/Papers/2013/pred-present-with-bsts.pdf>.

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2018-10-30" />
+<meta name="date" content="2018-11-04" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">MarketMatching Package Vignette</h1>
 <h4 class="author"><em>Kim Larsen</em></h4>
-<h4 class="date"><em>2018-10-30</em></h4>
+<h4 class="date"><em>2018-11-04</em></h4>
 
 
 
@@ -136,19 +136,13 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ## rely entirely on dynamic time warping (dtw) with a limit of 1
 ##-----------------------------------------------------------------------
 
-##-----------------------------------------------------------------------
-## <span class="al">NOTE</span>: if the install fails, use devtools version 2.0.0
-## packageurl &lt;- &quot;http://cran.r-project.org/src/contrib/Archive/devtools/devtools_2.0.0.tar.gz&quot;
-## install.packages(packageurl, repos=NULL, type=&quot;source&quot;)
-##-----------------------------------------------------------------------
-
 <span class="kw">library</span>(MarketMatching)
 <span class="kw">data</span>(weather, <span class="dt">package=</span><span class="st">&quot;MarketMatching&quot;</span>)
 mm &lt;-<span class="st"> </span><span class="kw">best_matches</span>(<span class="dt">data=</span>weather,
                    <span class="dt">id_variable=</span><span class="st">&quot;Area&quot;</span>,
                    <span class="dt">date_variable=</span><span class="st">&quot;Date&quot;</span>,
                    <span class="dt">matching_variable=</span><span class="st">&quot;Mean_TemperatureF&quot;</span>,
-                   <span class="dt">parallel=</span><span class="ot">TRUE</span>,
+                   <span class="dt">parallel=</span><span class="ot">FALSE</span>,
                    <span class="dt">warping_limit=</span><span class="dv">1</span>, <span class="co"># warping limit=1</span>
                    <span class="dt">dtw_emphasis=</span><span class="dv">1</span>, <span class="co"># rely only on dtw for pre-screening</span>
                    <span class="dt">matches=</span><span class="dv">5</span>, <span class="co"># request 5 matches</span>
@@ -160,8 +154,9 @@ mm &lt;-<span class="st"> </span><span class="kw">best_matches</span>(<span clas
 ## This is merely to demonstrate the function.
 ##-----------------------------------------------------------------------
 results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><span class="kw">inference</span>(<span class="dt">matched_markets =</span> mm,
-                                    <span class="dt">test_market =</span> <span class="st">&quot;CPH&quot;</span>,
-                                    <span class="dt">end_post_period =</span> <span class="st">&quot;2015-10-01&quot;</span>)</code></pre></div>
+                                     <span class="dt">analyze_betas=</span><span class="ot">TRUE</span>,
+                                     <span class="dt">test_market =</span> <span class="st">&quot;CPH&quot;</span>,
+                                     <span class="dt">end_post_period =</span> <span class="st">&quot;2015-10-01&quot;</span>)</code></pre></div>
 <pre><code>##  ------------- Inputs -------------
 ##  Test Market: CPH
 ##  Control Market 1: BOS
@@ -176,17 +171,18 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 ##  Post Period Start Date: 2014-10-02
 ##  Post Period End Date: 2014-12-31
 ##  Matching Metric: Mean_TemperatureF
-##  Local Level Prior SD: 0.01
+##  bsts parameters: 
+##    prior.level.sd: 0.01
 ##  Posterior Intervals Tail Area: 95%
 ## 
 ## 
 ##  ------------- Model Stats -------------
 ##  Matching (pre) Period MAPE: 4.04%
-##  Beta 1 [BOS]: 0.0738
-##  Beta 2 [JFK]: 0.1509
-##  Beta 3 [LHR]: 0.0869
-##  Beta 4 [STR]: 0.3016
-##  Beta 5 [ZRH]: 0.0766
+##  Beta 1 [BOS]: 0.0607
+##  Beta 2 [JFK]: 0.1213
+##  Beta 3 [LHR]: 0.0338
+##  Beta 4 [STR]: 0.288
+##  Beta 5 [ZRH]: 0.0765
 ##  DW: 1.16
 ## 
 ## 
@@ -204,9 +200,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <th align="right">RelativeDistance</th>
 <th align="right">Correlation</th>
 <th align="right">Length</th>
-<th align="right">rank</th>
 <th align="left">MatchingStartDate</th>
 <th align="left">MatchingEndDate</th>
+<th align="right">rank</th>
 </tr>
 </thead>
 <tbody>
@@ -216,9 +212,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <td align="right">0.1560921</td>
 <td align="right">0.8520291</td>
 <td align="right">274</td>
-<td align="right">1</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td align="left">ATL</td>
@@ -226,9 +222,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <td align="right">0.1588433</td>
 <td align="right">0.8334468</td>
 <td align="right">274</td>
-<td align="right">2</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
+<td align="right">2</td>
 </tr>
 <tr class="odd">
 <td align="left">ATL</td>
@@ -236,9 +232,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <td align="right">0.1647951</td>
 <td align="right">0.8142158</td>
 <td align="right">274</td>
-<td align="right">3</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
+<td align="right">3</td>
 </tr>
 <tr class="even">
 <td align="left">ATL</td>
@@ -246,9 +242,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <td align="right">0.1814711</td>
 <td align="right">0.8755064</td>
 <td align="right">274</td>
-<td align="right">4</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
+<td align="right">4</td>
 </tr>
 <tr class="odd">
 <td align="left">ATL</td>
@@ -256,9 +252,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <td align="right">0.2082538</td>
 <td align="right">0.9377601</td>
 <td align="right">274</td>
-<td align="right">5</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
+<td align="right">5</td>
 </tr>
 <tr class="even">
 <td align="left">BKK</td>
@@ -266,9 +262,9 @@ results &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><s
 <td align="right">0.0706538</td>
 <td align="right">0.5964474</td>
 <td align="right">274</td>
-<td align="right">1</td>
 <td align="left">2014-01-01</td>
 <td align="left">2014-10-01</td>
+<td align="right">1</td>
 </tr>
 </tbody>
 </table>
@@ -365,23 +361,23 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 <tbody>
 <tr class="odd">
 <td align="left">BOS</td>
-<td align="right">0.0737840</td>
+<td align="right">0.0606804</td>
 </tr>
 <tr class="even">
 <td align="left">JFK</td>
-<td align="right">0.1508870</td>
+<td align="right">0.1212611</td>
 </tr>
 <tr class="odd">
 <td align="left">LHR</td>
-<td align="right">0.0868696</td>
+<td align="right">0.0338218</td>
 </tr>
 <tr class="even">
 <td align="left">STR</td>
-<td align="right">0.3016235</td>
+<td align="right">0.2879675</td>
 </tr>
 <tr class="odd">
 <td align="left">ZRH</td>
-<td align="right">0.0766309</td>
+<td align="right">0.0764577</td>
 </tr>
 </tbody>
 </table>
@@ -489,8 +485,8 @@ match<span class="op">$</span>distance</code></pre></div>
 </div>
 <div id="references" class="section level1">
 <h1>References</h1>
-<p>[1] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). <a href="http://google.github.io/CausalImpact/" class="uri">http://google.github.io/CausalImpact/</a></p>
-<p>[2] Vignette for the <code>dtw</code> package: <a href="https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf" class="uri">https://cran.r-project.org/web/packages/dtw/vignettes/dtw.pdf</a>.</p>
+<p>[1] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015).</p>
+<p>[2] The vignette for the <code>dtw</code> package (browseVignettes(“dtw”))</p>
 <p>[3] Predicting the Present with Bayesian Structural Time Series, Steven L. Scott and Hal Varian, <a href="http://people.ischool.berkeley.edu/~hal/Papers/2013/pred-present-with-bsts.pdf" class="uri">http://people.ischool.berkeley.edu/~hal/Papers/2013/pred-present-with-bsts.pdf</a>.</p>
 </div>
 

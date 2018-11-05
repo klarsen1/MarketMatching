@@ -5,14 +5,21 @@
 \title{Given a test market, analyze the impact of an intervention}
 \usage{
 inference(matched_markets=NULL,
+          bsts_modelargs=NULL,
           test_market=NULL,
           end_post_period=NULL,
           alpha=0.05,
           prior_level_sd=0.01,
-          control_matches=5)
+          control_matches=5, 
+          analyze_betas=FALSE, 
+          nseasons=NULL)
 }
 \arguments{
 \item{matched_markets}{A matched_market object created by the market_matching function}
+
+\item{bsts_modelargs}{A list() that passes model parameters directly to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)
+This parameter will overwrite the values specified in prior_level_sd and nseasons. ONLY use this if you're using intricate bsts settings
+For most use-cases, using the prior_level_sd and nseasons parameters should be sufficient}
 
 \item{test_market}{The name of the test market (character)}
 
@@ -21,13 +28,14 @@ inference(matched_markets=NULL,
 \item{alpha}{Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals}
 
 \item{prior_level_sd}{Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
-Note that more wiggly local level terms also translate into larger posterior intervals.}
+Note that more wiggly local level terms also translate into larger posterior intervals
+This parameter will be overwritten if you're using the bsts_modelargs parameter}
 
 \item{control_matches}{Number of matching control markets to use in the analysis}
 
-\item{bsts_modelargs}{A list() that passesm model parameters to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)}
-
 \item{analyze_betas}{Controls whether to test the model under a variety of different values for prior_level_sd.}
+
+\item{nseasons}{Seasonality for the bsts model -- e.g., 52 for weekly seasonality}
 }
 \value{
 Returns an object of type \code{inference}. The object has the
@@ -72,7 +80,9 @@ library(MarketMatching)
 ## This is merely to demonstrate the function.
 ##-----------------------------------------------------------------------
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather, id="Area",
+mm <- best_matches(data=weather, 
+                   id="Area",
+                   markets_to_be_matched=c("CPH", "SFO"),
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
                    parallel=FALSE,
@@ -84,6 +94,7 @@ mm <- best_matches(data=weather, id="Area",
 library(CausalImpact)
 results <- inference(matched_markets=mm,
                      test_market="CPH",
+                     analyze_betas=FALSE,
                      end_post_period="2015-12-15",
                      prior_level_sd=0.002)
 }
