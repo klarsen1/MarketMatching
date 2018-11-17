@@ -488,7 +488,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
     cat(paste0("\t  ", modelparms[p], ": ", bsts_modelargs[p], "\n"))
   }
   if (!("nseasons" %in% modelparms)){
-    cat("\t  No seasonality specified. Seasonality will be controlled for by the matched markets \n")
+    cat("\t  No seasonality component (controlled for by the matched markets) \n")
   }
   cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
   cat("\n")
