@@ -11,7 +11,7 @@ CMean <- function(b) {
 
 #' @importFrom stats cor var lm na.omit
 
-calculate_distances <- function(all_markets, data, id, i, warping_limit, matches, dtw_emphasis){
+calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limit, matches, dtw_emphasis){
   ## Nulling to avoid CRAN notes
   Skip <- NULL
   RelativeDistance <- NULL
@@ -22,14 +22,14 @@ calculate_distances <- function(all_markets, data, id, i, warping_limit, matches
   combined_rank <- NULL
 
   row <- 1
-  ThisMarket <- all_markets[i]
-  distances <- data.frame(matrix(nrow=length(all_markets), ncol=5))
+  ThisMarket <- markets_to_be_matched[i]
+  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=5))
   names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length")
   messages <- 0
   # For each market
-  for (j in 1:length(all_markets)){
+  for (j in 1:length(unique(data$id_var))){
     isValidTest <- TRUE
-    ThatMarket <- all_markets[j]
+    ThatMarket <- unique(data$id_var)[j]
     distances[row, id] <- ThisMarket
     distances[row, "BestControl"] <- ThatMarket
     mkts <- create_market_vectors(data, ThisMarket, ThatMarket)
@@ -250,9 +250,16 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   ## save a reduced version of the data
   saved_data <- data
 
-  ## get a vector of all markets
-  all_markets <- unique(data$id_var)
-  
+  ## get a vector of all markets that matches are wanted for. Check to ensure markets_to_be_matched exists in the data.
+  if(is.null(markets_to_be_matched)) {
+    markets_to_be_matched <- unique(data$id_var)
+  }else{
+    markets_to_be_matched <- unique(markets_to_be_matched)
+    for (k in 1:length(markets_to_be_matched)){
+      stopif(markets_to_be_matched[k] %in% unique(data$id_var), FALSE, paste0("test market ", markets_to_be_matched[k], " does not exist"))
+    }
+  }
+
   ## set up a list to hold all distance matrices
   all_distances <- list()
 
@@ -262,32 +269,23 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   ## check if any data is left
   stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
 
-  if(!is.null(markets_to_be_matched)){
-    markets_to_be_matched <- unique(markets_to_be_matched)
-    for (k in 1:length(markets_to_be_matched)){
-       stopif(markets_to_be_matched[k] %in% unique(all_markets), FALSE, paste0("test market ", markets_to_be_matched[k], " does not exist"))
-       i <- which(all_markets == markets_to_be_matched[k])
-       all_distances[[k]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+  ## loop through markets and compute distances
+  if (parallel == FALSE) {
+    for (i in 1:length(markets_to_be_matched)) {
+        all_distances[[i]] <- calculate_distances(markets_to_be_matched, data, id_variable, i, warping_limit, matches, dtw_emphasis)
     }
     shortest_distances <- data.frame(rbindlist(all_distances))
   }else{
-    ## loop through markets and compute distances
-    if (parallel==FALSE){
-      for (i in 1:length(all_markets)){
-        all_distances[[i]] <- calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
-      }
-      shortest_distances <- data.frame(rbindlist(all_distances))
-    } else{
-      ncore <- detectCores()-1
-      registerDoParallel(ncore)
-      loop_result <- foreach(i=1:length(all_markets)) %dopar% {
-        calculate_distances(all_markets, data, id_variable, i, warping_limit, matches, dtw_emphasis)
-      }
-      shortest_distances <- data.frame(rbindlist(loop_result))
-      stopImplicitCluster()
-    }
+    ncore <- detectCores() - 1
+    registerDoParallel(ncore)
+    loop_result <- foreach(i = 1:length(markets_to_be_matched)) %dopar% 
+        {
+            calculate_distances(markets_to_be_matched, data, id_variable, i, warping_limit, matches, dtw_emphasis)
+        }
+    shortest_distances <- data.frame(rbindlist(loop_result))
+    stopImplicitCluster()
   }
-  
+
   ### Return the results
   object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable)
   class(object) <- "matched_market"
