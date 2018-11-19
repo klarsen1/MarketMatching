@@ -60,15 +60,17 @@ Summary of features:
 -   Allows the user to choose how many markets are sent to the slab-and-prior model.
 -   All plots are done in `ggplot2` and can easily be extracted and manipulated.
 
-How to Install from Github
-==========================
+How to Install
+==============
 
 ``` r
-## use devtools version 1.11.1
+## THIS PACKAGE IS IN CRAN.
+## If you want to install from Github, use devtools version 1.11.1
 ## packageurl <- "http://cran.r-project.org/src/contrib/Archive/devtools/devtools_1.11.1.tar.gz"
 ## install.packages(packageurl, repos=NULL, type="source")
-library(devtools)
-install_github("klarsen1/MarketMatching", build_vignettes=TRUE)
+## library(devtools)
+## install_github("klarsen1/MarketMatching", build_vignettes=TRUE)
+library(MarketMatching)
 ```
 
 Example
