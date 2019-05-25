@@ -166,7 +166,7 @@ dw <- function(y, yhat){
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"
 #' @param end_match_period the end date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
-#' @param matches Number of matching markets to keep in the output
+#' @param matches Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
@@ -308,7 +308,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #' @param prior_level_sd Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
 #' Note that more wiggly local level terms also translate into larger posterior intervals
 #' This parameter will be overwritten if you're using the bsts_modelargs parameter
-#' @param control_matches Number of matching control markets to use in the analysis
+#' @param control_matches Number of matching control markets to use in the analysis (default is 5)
 #' @param analyze_betas Controls whether to test the model under a variety of different values for prior_level_sd.
 #' @param nseasons Seasonality for the bsts model -- e.g., 52 for weekly seasonality
 
@@ -338,6 +338,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #' results <- inference(matched_markets=mm,
 #'                      test_market="CPH",
 #'                      analyze_betas=FALSE,
+#'                      control_matches=5, # use all 5 matches for inference
 #'                      end_post_period="2015-12-15",
 #'                      prior_level_sd=0.002)
 #' @usage
