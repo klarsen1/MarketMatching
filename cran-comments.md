@@ -1,7 +1,7 @@
 Release summary
 ===============
 
-The current version is 1.1.1.
+The current version is 1.1.2.
 
 Test environments
 =================
@@ -13,7 +13,7 @@ Test environments
 R CMD check results
 ===================
 
-0 errors | 0 warnings | 0 notes
+0 errors | 1 warning | 1 notes
 
 Did get this message when releasing:
 

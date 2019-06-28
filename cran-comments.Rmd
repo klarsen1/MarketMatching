@@ -6,7 +6,7 @@ output:
 
 # Release summary
 
-The current version is 1.1.1. 
+The current version is 1.1.2. 
 
 # Test environments
 
@@ -16,15 +16,12 @@ The current version is 1.1.1.
 
 # R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 1 warning | 1 notes
 
-Did get this message when releasing:
+❯ checking DESCRIPTION meta-information ... WARNING
+  Dependence on R version ‘3.5.2’ not with patchlevel 0
 
-   Files ‘README.md’ or ‘NEWS.md’ cannot be checked without ‘pandoc’ being installed
-
-win-builder returned this note:
-
-  Possibly mis-spelled words in DESCRIPTION:
-     CausalImpact (7:343)
-     MarketMatching (7:271)
-     workflow (7:247)
+❯ checking top-level files ... NOTE
+  Non-standard files/directories found at top level:
+    ‘LICENSE.rtf’ ‘README.html’ ‘README.rmd’ ‘cran-comments.Rmd’
+    ‘cran-comments.md’ ‘news.Rmd’ ‘news.md’

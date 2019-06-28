@@ -31,7 +31,7 @@ For most use-cases, using the prior_level_sd and nseasons parameters should be s
 Note that more wiggly local level terms also translate into larger posterior intervals
 This parameter will be overwritten if you're using the bsts_modelargs parameter}
 
-\item{control_matches}{Number of matching control markets to use in the analysis}
+\item{control_matches}{Number of matching control markets to use in the analysis (default is 5)}
 
 \item{analyze_betas}{Controls whether to test the model under a variety of different values for prior_level_sd.}
 
@@ -59,7 +59,7 @@ The width of the interval is determined by the \code{alpha} parameter.}
 \item{\code{PlotPriorLevelSdAnalysis}}{Plot of DW and MAPE for different values of the local level SE using \code{ggplot2}}
 \item{\code{PlotLocalLevel}}{Plot of the local level term using \code{ggplot2}}
 \item{\code{TestData}}{A \code{data.frame} with the test market data}
-\item{\code{TestData}}{A \code{data.frame} with the data for the control markets}
+\item{\code{ControlData}}{A \code{data.frame} with the data for the control markets}
 \item{\code{PlotResiduals}}{Plot of the residuals using \code{ggplot2}}
 \item{\code{TestName}}{The name of the test market}
 \item{\code{TestName}}{The name of the control market}
@@ -95,6 +95,7 @@ library(CausalImpact)
 results <- inference(matched_markets=mm,
                      test_market="CPH",
                      analyze_betas=FALSE,
+                     control_matches=5, # use all 5 matches for inference
                      end_post_period="2015-12-15",
                      prior_level_sd=0.002)
 }

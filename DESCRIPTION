@@ -6,7 +6,7 @@ Date: 2019-06-24
 Authors@R: person("Larsen", "Kim", email = "kblarsen4@gmail.com", role = c("aut", "cre"))
 Description: For a given test market find the best control markets using time series matching and analyze the impact of an intervention. The intervention could be be a marketing event or some other local business tactic that is being tested. The workflow implemented in MarketMatching utilizes dynamic time warping (the 'dtw' package) to do the matching and the 'CausalImpact' package to analyze the causal impact. In fact, this package can be considered a "workflow wrapper" for those two packages. 
 Depends: 
-   R (>= 3.5.0) 
+   R (>= 3.5.2) 
 License: GPL (>=3)
 Imports: 
    data.table, 

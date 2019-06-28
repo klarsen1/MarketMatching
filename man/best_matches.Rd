@@ -40,7 +40,7 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"}
 \item{end_match_period}{the end date of the matching period (pre period).
 Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 
-\item{matches}{Number of matching markets to keep in the output}
+\item{matches}{Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)}
 
 \item{dtw_emphasis}{Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
