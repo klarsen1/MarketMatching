@@ -558,7 +558,9 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
   ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(y))
 
   ## create actual versus predicted plots
-  avp <- cbind.data.frame(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")])
+  stopif (length(date) != nrow(data.frame(impact$series)), "ERROR: you might have holes/skips in your time series ")
+    
+  avp <- data.frame(cbind(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")]))
   names(avp) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
   avp$test_market <- test_market
   results[[10]] <- ggplot(data=avp, aes(x=Date)) +
