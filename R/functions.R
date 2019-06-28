@@ -373,7 +373,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #' \item{\code{PlotPriorLevelSdAnalysis}}{Plot of DW and MAPE for different values of the local level SE using \code{ggplot2}}
 #' \item{\code{PlotLocalLevel}}{Plot of the local level term using \code{ggplot2}}
 #' \item{\code{TestData}}{A \code{data.frame} with the test market data}
-#' \item{\code{TestData}}{A \code{data.frame} with the data for the control markets}
+#' \item{\code{ControlData}}{A \code{data.frame} with the data for the control markets}
 #' \item{\code{PlotResiduals}}{Plot of the residuals using \code{ggplot2}}
 #' \item{\code{TestName}}{The name of the test market}
 #' \item{\code{TestName}}{The name of the control market}
