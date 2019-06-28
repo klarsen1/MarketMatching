@@ -10,16 +10,13 @@ The current version is 1.1.2.
 
 # Test environments
 
-* Local OS X install, R 3.5.0, using devtools::check()
+* Local OS X install, R 3.5.2, using devtools::check()
 
-* win-builder
+* devtools::check_win_devel()
 
 # R CMD check results
 
-0 errors | 1 warning | 1 notes
-
-❯ checking DESCRIPTION meta-information ... WARNING
-  Dependence on R version ‘3.5.2’ not with patchlevel 0
+0 errors | 0 warnings | 1 notes
 
 ❯ checking top-level files ... NOTE
   Non-standard files/directories found at top level:

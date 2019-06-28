@@ -102,9 +102,10 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(matching_variable %in% names(data), FALSE, "ERROR: matching metric not found in input data")
   stopif(length(unique(data[[id]]))>2, FALSE, "ERROR: Need at least 3 unique markets")
   stopif(TRUE %in% is.na(data[[id]]), "ERROR: NAs found in the market column")
+  stopif(TRUE %in% is.null(data[[id]]), "ERROR: NULLs found in the market column")
+  stopif('' %in% unique(data[[id]]), "ERROR: Blanks found in the market column")
   stopif(TRUE %in% is.na(data[[matching_variable]]), "ERROR: NAs found in the matching variable")
   stopif(class(data[[date_variable]]) != "Date", "ERROR: date_variable is not a Date. Check your data frame.")
-  
 }
 
 #' @importFrom reshape2 melt dcast
