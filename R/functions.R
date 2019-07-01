@@ -413,8 +413,8 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
   
   ## Model settings
   if (!is.null(bsts_modelargs) & !is.null(nseasons)){
-    cat("\tNOTE: You're passing model arguments directly to bsts, but also using the nseasons parameter \n")
-    cat("\tDid you mean to do this? Note that bsts_modelargs will overwrite nseasons \n")
+    cat("\tNOTE: You're passing arguments directly to bsts while also specifying nseasons \n")
+    cat("\tNOTE: bsts_modelargs will overwrite nseasons \n")
     cat("\n")
     cat("\n")
   }

@@ -20,7 +20,7 @@
 #' 
 #' For more details, check out the vignette: browseVignettes("MarketMatching")
 #' @author Kim Larsen (kblarsen4 at gmail.com)
-#' @keywords time warping, time series matching, causal impact
+#' @keywords ts htest
 #' @docType package
 #' @description 
 #' For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention.

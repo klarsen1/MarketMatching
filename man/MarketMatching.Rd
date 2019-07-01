@@ -75,9 +75,5 @@ results$PlotActualVersusExpected
 \author{
 Kim Larsen (kblarsen4 at gmail.com)
 }
-\keyword{causal}
-\keyword{impact}
-\keyword{matching,}
-\keyword{series}
-\keyword{time}
-\keyword{warping,}
+\keyword{htest}
+\keyword{ts}

@@ -13,6 +13,6 @@ Test environments
 R CMD check results
 ===================
 
-0 errors | 0 warnings | 1 notes
+0 errors | 0 warnings | 1 note
 
-❯ checking top-level files ... NOTE Non-standard files/directories found at top level: ‘LICENSE.rtf’ ‘README.html’ ‘README.rmd’ ‘cran-comments.Rmd’ ‘cran-comments.md’ ‘news.Rmd’ ‘news.md’
+-   checking top-level files ... NOTE Non-standard files/directories found at top level: ‘cran-comments.md’ ‘cran-comments.Rmd’ ‘LICENSE.rtf’ ‘news.md’ ‘news.Rmd’ ‘README.html’ ‘README.rmd’
