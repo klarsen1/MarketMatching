@@ -23,8 +23,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
 
   row <- 1
   ThisMarket <- markets_to_be_matched[i]
-  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=6))
-  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "ABSSUM")
+  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=7))
+  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "ABSSUM", "RAWDIST")
   messages <- 0
   # For each market
   for (j in 1:length(unique(data$id_var))){
@@ -37,6 +37,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     ref <- mkts[[2]]
     dates <- mkts[[3]]
     abssum <- NA
+    rawdist <- NA
     # If insufficient data or no variance
     if ((stats::var(test)==0 | length(test)<=2*warping_limit+1)){
       isValidTest <- FALSE
@@ -46,7 +47,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       if (dtw_emphasis>0){
         abssum <- abs(sum(test))
-        dist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abssum
+        rawdist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance 
+        dist <- rawdist / abssum
       } else{
         dist <- 0
       }
@@ -55,6 +57,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "Skip"] <- FALSE
       distances[row, "Length"] <- length(test)
       distances[row, "ABSSUM"] <- abssum
+      distances[row, "RAWDIST"] <- rawdist
     } else{
       if (ThisMarket != ThatMarket){
          messages <- messages + 1
@@ -63,7 +66,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "RelativeDistance"] <- NA
       distances[row, "Correlation"] <- NA
       distances[row, "Length"] <- NA
-      distances[row, "ABSSUM"] <- abssum
+      distances[row, "ABSSUM"] <- NA
+      distances[row, "RAWDIST"] <- NA
     }
     row <- row + 1
   }
