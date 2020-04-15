@@ -23,8 +23,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
 
   row <- 1
   ThisMarket <- markets_to_be_matched[i]
-  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=5))
-  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length")
+  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=6))
+  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "ABSSUM")
   messages <- 0
   # For each market
   for (j in 1:length(unique(data$id_var))){
@@ -36,6 +36,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     test <- mkts[[1]]
     ref <- mkts[[2]]
     dates <- mkts[[3]]
+    abssum <- NA
     # If insufficient data or no variance
     if ((stats::var(test)==0 | length(test)<=2*warping_limit+1)){
       isValidTest <- FALSE
@@ -44,14 +45,16 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     # If data and variance are sufficient and test vector was valid
     if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       if (dtw_emphasis>0){
-        dist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abs(sum(test))
+        abssum <- abs(sum(test))
+        dist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance / abssum
       } else{
         dist <- 0
       }
       distances[row, "Correlation"] <- cor(test, ref)
       distances[row, "RelativeDistance"] <- dist
       distances[row, "Skip"] <- FALSE
-      distances[row, "Length"] <- length(ref)
+      distances[row, "Length"] <- length(test)
+      distances[row, "ABSSUM"] <- abssum
     } else{
       if (ThisMarket != ThatMarket){
          messages <- messages + 1
@@ -60,6 +63,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "RelativeDistance"] <- NA
       distances[row, "Correlation"] <- NA
       distances[row, "Length"] <- NA
+      distances[row, "ABSSUM"] <- abssum
     }
     row <- row + 1
   }
