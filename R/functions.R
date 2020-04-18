@@ -745,7 +745,7 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   s <- NULL
   
   if (steps>20){steps <- 20}
-  if (steps>5){steps <- 5}
+  if (steps<5){steps <- 5}
 
   stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
   
