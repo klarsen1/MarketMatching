@@ -6,7 +6,7 @@
 \alias{MarketMatching-package}
 \title{Market Matching and Causal Impact Inference}
 \description{
-For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention.
+For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention (prospective or historical).
 The intervention could be be a marketing event or some other local business tactic that is being tested. 
 The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. 
 In fact, MarketMatching is simply a wrapper and worfflow for those two packages. 
@@ -32,7 +32,7 @@ The MarketMatching has two separate functions to perform the tasks described abo
 
 - inference(): Given an object from best_matches(), this function analyzes the causal impact of an intervention.
 
-- prospective_power(): Given an object from best_matches(), this function analyzes the power at fake intervention levels
+- prospective_power(): Given an object from best_matches(), this function calculates the probability of a causal impact for fake interventions.
 For more details, check out the vignette: browseVignettes("MarketMatching")
 }
 \examples{
@@ -72,6 +72,22 @@ results$PlotCumulativeEffect
 
 ## Plot actual observations for test market (CPH) versus the expectation (based on the control)
 results$PlotActualVersusExpected
+
+##-----------------------------------------------------------------------
+## Power analysis for a fake intervention ending at 2015-10-01
+## The maximum lift analyzed is 5 percent, the minimum is 0 (using 5 steps)
+## Since this is weather data it is a not a very meaningful example. 
+## This is merely to demonstrate the functionality.
+##-----------------------------------------------------------------------
+power <- MarketMatching::prospective_power(matched_markets = mm, 
+                                     test_market = "CPH", 
+                                     end_fake_post_period = "2015-10-01", 
+                                     prior_level_sd = 0.002, 
+                                     steps=5,
+                                     max_fake_lift=0.05)
+
+## Plot the curve
+power$ResultsGraph
 }
 \author{
 Kim Larsen (kblarsen4 at gmail.com)

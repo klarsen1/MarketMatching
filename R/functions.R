@@ -569,7 +569,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
   ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(y))
 
   ## create actual versus predicted plots
-  stopif (length(date) != nrow(data.frame(impact$series)), "ERROR: you might have holes/skips in your time series ")
+  stopif (length(date) != nrow(data.frame(impact$series)), "ERROR: you might have holes (skipped weeks/days/months) in your time series ")
     
   avp <- data.frame(cbind(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")]))
   names(avp) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
@@ -594,7 +594,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 
   ## create plots of the actual data
   plotdf <- data[data$id_var %in% c(test_market, control_market),]
-  results[[12]] <- ggplot(data=plotdf, aes(x=date_var, y=match_var, colour=id_var)) +
+  results[[12]] <- ggplot(data=plotdf, aes(x=date_var, y=match_var, colour=as.factor(id_var))) +
     geom_line() +
     theme_bw() + theme(legend.title = element_blank(), axis.title.x = element_blank()) + ylab("") + xlab("Date") +
     geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
@@ -609,7 +609,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
     
     ## plot DWs and MAPEs at different SDs
     plotdf <- melt(data=betas, id="SD")
-    results[[14]] <- ggplot(data=plotdf, aes(x=SD, y=value, colour=variable)) + geom_line() +
+    results[[14]] <- ggplot(data=plotdf, aes(x=SD, y=value, colour=as.factor(variable))) + geom_line() +
       theme_bw() + theme(legend.title = element_blank()) +
       geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD") +
       facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour=FALSE)
@@ -658,7 +658,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
   return (object)
 }
 
-#' Given a test market, analyze the impact of fake iterventions
+#' Given a test market, analyze the impact of fake interventions (prospective power analysis)
 #'
 #' \code{prospective_power} Analyzes the causal impact of a fake intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
 #' The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
@@ -668,16 +668,18 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' This parameter will overwrite the values specified in prior_level_sd and nseasons. ONLY use this if you're using intricate bsts settings
 #' For most use-cases, using the prior_level_sd and nseasons parameters should be sufficient
 #' @param test_market The name of the test market (character)
-#' @param end_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
+#' @param end_fake_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
 #' @param alpha Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals
 #' @param prior_level_sd Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
 #' Note that more wiggly local level terms also translate into larger posterior intervals
 #' This parameter will be overwritten if you're using the bsts_modelargs parameter
 #' @param control_matches Number of matching control markets to use in the analysis (default is 5)
 #' @param nseasons Seasonality for the bsts model -- e.g., 52 for weekly seasonality
-#' @param max_lift The maximum fake lift -- e.g., 0.1 means that the minimum lift evaluated is approximately 10%
+#' @param max_fake_lift The maximum fake lift -- e.g., 0.1 means that the minimum lift evaluated is approximately 10%
 #' Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified
 #' @param parallel set to TRUE for faster execution (default is FALSE)
+#' @param steps The number of steps used to calculate the power curve (default is 10)
+#' 
 #' 
 #' @import ggplot2
 
@@ -706,20 +708,21 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'                      test_market="CPH",
 #'                      parallel=FALSE,
 #'                      control_matches=5, # use all 5 matches for inference
-#'                      end_post_period="2015-12-15",
+#'                      end_fake_post_period="2015-12-15",
 #'                      prior_level_sd=0.002, 
-#'                      max_lift=0.1)
+#'                      max_fake_lift=0.1)
 #' @usage
 #' prospective_power(matched_markets=NULL,
 #'           bsts_modelargs=NULL,
 #'           test_market=NULL,
-#'           end_post_period=NULL,
+#'           end_fake_post_period=NULL,
 #'           alpha=0.05,
 #'           prior_level_sd=0.01,
 #'           control_matches=5, 
 #'           nseasons=NULL, 
-#'           max_lift=NULL, 
-#'           parallel=FALSE)
+#'           max_fake_lift=NULL, 
+#'           parallel=FALSE,
+#'           steps=10)
 #'
 #' @return Returns an object of type \code{matched_market_power}. The object has the
 #' following elements:
@@ -731,7 +734,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' @importFrom scales percent
 #' @importFrom data.table rbindlist
 
-prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_lift=NULL, parallel=FALSE){
+prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_fake_lift=NULL, parallel=FALSE, steps=10){
   
   ## use nulling to avoid CRAN notes
   id_var <- NULL
@@ -740,8 +743,10 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   Response <- NULL
   match_var <- NULL
   s <- NULL
-  Steps <- 20
   
+  if (steps>20){steps <- 20}
+  if (steps>5){steps <- 5}
+
   stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
   
   ## Model settings
@@ -770,14 +775,14 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   stopif(test_market %in% unique(data$id_var), FALSE, paste0("ERROR: Test market ", test_market, " does not exist"))
   
   ## if an end date has not been provided, then choose the max of the data
-  if (is.null(end_post_period)){
-    end_post_period <- as.Date(max(subset(data, id_var==test_market)$date_var))
+  if (is.null(end_fake_post_period)){
+    end_fake_post_period <- as.Date(max(subset(data, id_var==test_market)$date_var))
   }
   
   # filter for dates
   MatchingStartDate <- as.Date(subset(mm, id_var==test_market)$MatchingStartDate[1])
   MatchingEndDate <- as.Date(subset(mm, id_var==test_market)$MatchingEndDate[1])
-  data <- dplyr::filter(data, date_var>=MatchingStartDate & date_var<=as.Date(end_post_period))
+  data <- dplyr::filter(data, date_var>=MatchingStartDate & date_var<=as.Date(end_fake_post_period))
   
   ## get the control market name
   control_market <- subset(mm, id_var==test_market)$BestControl
@@ -787,7 +792,7 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   y <- mkts[[1]]
   ref <- mkts[[2]]
   date <- mkts[[3]]
-  end_post_period <- max(date)
+  end_fake_post_period <- max(date)
   post_period <- date[date > as.Date(mm[1, "MatchingEndDate"])]
   stopif(length(post_period)==0, TRUE, "ERROR: no valid data in the post period")
   post_period_start_date <- min(post_period)
@@ -803,8 +808,8 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   cat(paste0("\tDate Variable: ", matched_markets$DateVariable, "\n"))
   cat(paste0("\tMatching (pre) Period Start Date: ", MatchingStartDate, "\n"))
   cat(paste0("\tMatching (pre) Period End Date: ", MatchingEndDate, "\n"))
-  cat(paste0("\tPost Period Start Date: ", post_period_start_date, "\n"))
-  cat(paste0("\tPost Period End Date: ", post_period_end_date, "\n"))
+  cat(paste0("\tFake post Period Start Date: ", post_period_start_date, "\n"))
+  cat(paste0("\tFake post Period End Date: ", post_period_end_date, "\n"))
   cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
   cat(paste0("\tbsts parameters: \n"))
   modelparms <- names(bsts_modelargs)
@@ -815,14 +820,15 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
     cat("\t  No seasonality component (controlled for by the matched markets) \n")
   }
   cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
-  cat(paste0("\tMax Point Lift: ", max_lift, "\n"))
+  cat("\n")
+  cat(paste0("\tMax Fake Lift: ", max_fake_lift, "\n"))
   cat("\n")
   cat("\n")
   pre.period <- c(as.Date(MatchingStartDate), as.Date(MatchingEndDate))
   post.period <- c(as.Date(post_period_start_date), as.Date(post_period_end_date))
   set.seed(2015)
   
-  stepsize <- (max_lift - 0)/Steps
+  stepsize <- max_fake_lift/steps
   
   temp_df <- data.frame(cbind(y, ref, date))
   y_post <- subset(temp_df, date>as.Date(MatchingEndDate))$y
@@ -834,7 +840,7 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
 
   if (parallel==FALSE){
     power <- list()
-    for (i in 0:Steps){
+    for (i in 0:steps){
        y_new <- c(y_pre, (stepsize*i*pattern*s+1)*y_post)
        fake_lift=sum((stepsize*i*pattern*s+1)*y_post)/sum(y_post)-1
        ts <- zoo(cbind.data.frame(y_new, ref), date)
@@ -846,7 +852,7 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   } else{
     ncore <- detectCores() - 1
     registerDoParallel(ncore)
-    loop_result <- foreach(i = 0:Steps) %dopar% 
+    loop_result <- foreach(i = 0:steps) %dopar% 
       {
         y_new <- c(y_pre, (stepsize*i*pattern*s+1)*y_post)
         fake_lift=sum((stepsize*i*pattern*s+1)*y_post)/sum(y_post)-1
@@ -860,9 +866,9 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   }
   
   power_chart <- ggplot(data=power_df, aes(x=fake_lift, y=prob_causal)) + 
-    geom_smooth(se=FALSE, method="loess", formula = y ~ x) + 
+    geom_line(size=2) + 
     ylab(paste0("Probability of causal impact at alpha= ", alpha)) + 
-    xlab("Fake Lift") + 
+    xlab("Average Lift During Fake Post Period") + 
     scale_y_continuous(labels = scales::percent) +
     scale_x_continuous(labels = scales::percent)
   

@@ -62,6 +62,7 @@ Hence, the package does *not* provide any new core functionality but it simplifi
 * Shows the average estimated coefficients for all the markets used in the linear regression component of the structural time series model.
 * Allows the user to choose how many markets are sent to the slab-and-prior model.
 * All plots are done in `ggplot2` and can easily be extracted and manipulated.
+* Allows the user to calculate the probability of a causal impact for fake interventions (prospective power curves).
 
 # Example
 The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.
@@ -140,6 +141,44 @@ Store the average posterior coefficients in a data.frame. STR (Stuttgart) receiv
 coeff <- results$Coefficients
 knitr::kable(head(coeff))
 ```
+# Prospective Power Curves
+In this example, we're calculating power (probability of a causal impact at alpha=0.05) using a fake interventions starting after 2014-10-01 and ending at 2015-10-01. We're analyzing fake lifts from 0 to 5 percent in 5 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention.
+```{r, echo = TRUE, message=FALSE, eval=TRUE}
+##-----------------------------------------------------------------------
+## Find the best 5 matches for each airport time series. Matching will
+## rely entirely on dynamic time warping (dtw) with a limit of 1
+##-----------------------------------------------------------------------
+
+library(MarketMatching)
+data(weather, package="MarketMatching")
+mm <- best_matches(data=weather,
+                   id_variable="Area",
+                   date_variable="Date",
+                   matching_variable="Mean_TemperatureF",
+                   parallel=FALSE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=1, # rely only on dtw for pre-screening
+                   matches=5, # request 5 matches
+                   start_match_period="2014-01-01",
+                   end_match_period="2014-10-01")
+#' ##-----------------------------------------------------------------------
+#' ## Power analysis for a fake intervention ending at 2015-10-01
+#' ## The maximum lift analyzed is 10 percent, the minimum is 0 percent
+#' ## Since this is weather data it is a not a very meaningful example. 
+#' ## This is merely to demonstrate the functionality.
+#' ##-----------------------------------------------------------------------
+power <- MarketMatching::prospective_power(matched_markets = mm, 
+                                      test_market = "CPH", 
+                                      end_fake_post_period = "2015-10-01", 
+                                      prior_level_sd = 0.002, 
+                                      steps=5,
+                                      max_fake_lift=0.05)
+```
+Here's the power curve:
+```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
+power$ResultsGraph
+```
+
 
 # How Does Dynamic Time Warping Work?
 Let's say we have two time series denoted by $X=(x_1, \ldots, x_n)$ and $Z=(z_1, \ldots, z_m)$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that, although $m$ and $n$ do not need to be equal, `MarketMatching` forces $m=n$. We'll denote the common length by $T$.

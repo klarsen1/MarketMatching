@@ -2,19 +2,19 @@
 % Please edit documentation in R/functions.R
 \name{prospective_power}
 \alias{prospective_power}
-\title{Given a test market, analyze the impact of fake iterventions}
+\title{Given a test market, analyze the impact of fake interventions (prospective power analysis)}
 \usage{
 prospective_power(matched_markets=NULL,
           bsts_modelargs=NULL,
           test_market=NULL,
-          end_post_period=NULL,
+          end_fake_post_period=NULL,
           alpha=0.05,
           prior_level_sd=0.01,
           control_matches=5, 
           nseasons=NULL, 
-          min_point_lift=NULL,
-          max_point_lift=NULL, 
-          parallel=FALSE)
+          max_fake_lift=NULL, 
+          parallel=FALSE,
+          steps=10)
 }
 \arguments{
 \item{matched_markets}{A matched_market object created by the market_matching function}
@@ -25,7 +25,7 @@ For most use-cases, using the prior_level_sd and nseasons parameters should be s
 
 \item{test_market}{The name of the test market (character)}
 
-\item{end_post_period}{The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"}
+\item{end_fake_post_period}{The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"}
 
 \item{alpha}{Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals}
 
@@ -37,17 +37,19 @@ This parameter will be overwritten if you're using the bsts_modelargs parameter}
 
 \item{nseasons}{Seasonality for the bsts model -- e.g., 52 for weekly seasonality}
 
-\item{min_point_lift}{The minimum fake lift for any time in time -- e.g., 0.01 means that the minimum lift at any given point in time is 1%}
-
-\item{max_point_lift}{The maximum fake lift for any time in time -- e.g., 0.1 means that the maximum lift at any given point in time is 10%}
+\item{max_fake_lift}{The maximum fake lift -- e.g., 0.1 means that the minimum lift evaluated is approximately 10%
+Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified}
 
 \item{parallel}{set to TRUE for faster execution (default is FALSE)}
+
+\item{steps}{The number of steps used to calculate the power curve (default is 10)}
 }
 \value{
-Returns an object of type \code{prospective_power}. The object has the
+Returns an object of type \code{matched_market_power}. The object has the
 following elements:
-\item{\code{data}}{The results stored in a data.frame}
-\item{\code{plot}}{The results stored in a ggplot graph}
+\item{\code{ResultsData}}{The results stored in a data.frame}
+\item{\code{ResultsGraph}}{The results stored in a ggplot graph}
+\item{\code{LiftPattern}}{The random pattern applied to the lift}
 }
 \description{
 \code{prospective_power} Analyzes the causal impact of a fake intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
@@ -77,8 +79,7 @@ results <- prospective_power(matched_markets=mm,
                      test_market="CPH",
                      parallel=FALSE,
                      control_matches=5, # use all 5 matches for inference
-                     end_post_period="2015-12-15",
+                     end_fake_post_period="2015-12-15",
                      prior_level_sd=0.002, 
-                     min_point_lift=0.01, 
-                     max_point_lift=0.1)
+                     max_fake_lift=0.1)
 }
