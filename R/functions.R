@@ -231,7 +231,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 
 
-best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1){
+best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1, clusters=FALSE){
 
   ## Nulling to avoid angry notes
   match_var <- NULL
@@ -744,7 +744,7 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   match_var <- NULL
   s <- NULL
   
-  if (steps>20){steps <- 20}
+  if (steps>20 & parallel==FALSE){steps <- 20}
   if (steps<5){steps <- 5}
 
   stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
