@@ -32,6 +32,7 @@ The MarketMatching has two separate functions to perform the tasks described abo
 
 - inference(): Given an object from best_matches(), this function analyzes the causal impact of an intervention.
 
+- prospective_power(): Given an object from best_matches(), this function analyzes the power at fake intervention levels
 For more details, check out the vignette: browseVignettes("MarketMatching")
 }
 \examples{

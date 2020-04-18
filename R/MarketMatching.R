@@ -18,6 +18,7 @@
 #' 
 #' - inference(): Given an object from best_matches(), this function analyzes the causal impact of an intervention.
 #' 
+#' - prospective_power(): Given an object from best_matches(), this function analyzes the power at fake intervention levels
 #' For more details, check out the vignette: browseVignettes("MarketMatching")
 #' @author Kim Larsen (kblarsen4 at gmail.com)
 #' @keywords ts htest
