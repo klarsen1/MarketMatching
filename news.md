@@ -1,6 +1,12 @@
 Package: MarketMatching
 
-Version: 1.1.2
+Version: 1.1.3
+
+MarketMacthing version 1.1.3
+============================
+
+Added the function prospective\_power() to calculate power curves. Fixed
+minor bugs.
 
 MarketMacthing version 1.1.2
 ============================

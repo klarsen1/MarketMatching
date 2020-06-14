@@ -10,7 +10,9 @@ best_matches(data=NULL,
              date_variable=NULL,
              matching_variable=NULL,
              parallel=TRUE,
+             clusters=FALSE,
              warping_limit=1,
+             ncusters=NULL,
              start_match_period=NULL,
              end_match_period=NULL,
              matches=5,
@@ -45,6 +47,10 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 \item{dtw_emphasis}{Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 An emphasis of 0.5 would yield equal weighting.}
+
+\item{clusters}{if set to TRUE, a time series clustering is applied and added to the output data.frame. Default is FALSE.}
+
+\item{nclusters}{the number of desired clusters. Default is NULL. If NULL, clusters will be chosen based on the a tree with a cutoff at height=0.7.}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the

@@ -167,6 +167,43 @@ Store the average posterior coefficients in a data.frame. STR (Stuttgart) receiv
 coeff <- results$Coefficients
 knitr::kable(head(coeff))
 ```
+# Prospective Power Curves
+In this example, we're calculating power (probability of a causal impact at alpha=0.05) using a fake interventions starting after 2014-10-01 and ending at 2015-10-01. We're analyzing fake lifts from 0 to 5 percent in 5 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention.
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
+##-----------------------------------------------------------------------
+## Find the best 5 matches for each airport time series. Matching will
+## rely entirely on dynamic time warping (dtw) with a limit of 1
+##-----------------------------------------------------------------------
+
+library(MarketMatching)
+data(weather, package="MarketMatching")
+mm <- best_matches(data=weather,
+                   id_variable="Area",
+                   date_variable="Date",
+                   matching_variable="Mean_TemperatureF",
+                   parallel=FALSE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=1, # rely only on dtw for pre-screening
+                   matches=5, # request 5 matches
+                   start_match_period="2014-01-01",
+                   end_match_period="2014-10-01")
+#' ##-----------------------------------------------------------------------
+#' ## Power analysis for a fake intervention ending at 2015-10-01
+#' ## The maximum lift analyzed is 10 percent, the minimum is 0 percent
+#' ## Since this is weather data it is a not a very meaningful example. 
+#' ## This is merely to demonstrate the functionality.
+#' ##-----------------------------------------------------------------------
+power <- MarketMatching::prospective_power(matched_markets = mm, 
+                                      test_market = "CPH", 
+                                      end_fake_post_period = "2015-10-01", 
+                                      prior_level_sd = 0.002, 
+                                      steps=5,
+                                      max_fake_lift=0.05)
+```
+Inspecting the power curve:
+```{r, echo = TRUE, message=FALSE, eval=FALSE, fig.width=7, fig.height=5}
+power$ResultsGraph
+```
 
 # References
 [1] CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015). 

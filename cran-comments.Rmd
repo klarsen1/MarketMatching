@@ -6,7 +6,7 @@ output:
 
 # Release summary
 
-The current version is 1.1.2. 
+The current version is 1.1.3. 
 
 # Test environments
 

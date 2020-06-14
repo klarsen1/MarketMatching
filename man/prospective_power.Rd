@@ -10,6 +10,7 @@ prospective_power(matched_markets=NULL,
           end_fake_post_period=NULL,
           alpha=0.05,
           prior_level_sd=0.01,
+          lift_pattern_type="random",
           control_matches=5, 
           nseasons=NULL, 
           max_fake_lift=NULL, 
@@ -43,6 +44,8 @@ Note that randomization is injected into the lift, which means that the max lift
 \item{parallel}{set to TRUE for faster execution (default is FALSE)}
 
 \item{steps}{The number of steps used to calculate the power curve (default is 10)}
+
+\item{lift_pattern_type}{Lift pattern. Default is random. The other choice is a constant lift (level shift).}
 }
 \value{
 Returns an object of type \code{matched_market_power}. The object has the
@@ -78,6 +81,7 @@ library(CausalImpact)
 results <- prospective_power(matched_markets=mm,
                      test_market="CPH",
                      parallel=FALSE,
+                     lift_pattern_type="random",
                      control_matches=5, # use all 5 matches for inference
                      end_fake_post_period="2015-12-15",
                      prior_level_sd=0.002, 

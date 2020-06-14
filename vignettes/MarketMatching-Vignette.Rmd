@@ -174,7 +174,7 @@ power <- MarketMatching::prospective_power(matched_markets = mm,
                                       steps=5,
                                       max_fake_lift=0.05)
 ```
-Here's the power curve:
+Inspecting the power curve:
 ```{r, echo = TRUE, message=FALSE, eval=TRUE, fig.width=7, fig.height=5}
 power$ResultsGraph
 ```
