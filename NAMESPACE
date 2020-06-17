@@ -2,7 +2,7 @@
 
 export(best_matches)
 export(inference)
-export(prospective_power)
+export(test_fake_lift)
 import(CausalImpact)
 import(dplyr)
 import(dtw)

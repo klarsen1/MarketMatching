@@ -110,7 +110,7 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(id %in% names(data), FALSE, "ERROR: ID variable not found in input data")
   stopif(date_variable %in% names(data), FALSE, "ERROR: date variable not found in input data")
   stopif(matching_variable %in% names(data), FALSE, "ERROR: matching metric not found in input data")
-  stopif(length(unique(data[[id]]))>2, FALSE, "ERROR: Need at least 3 unique markets")
+  stopif(length(unique(data[[id]]))>1, FALSE, "ERROR: Need at least 2 unique markets")
   stopif(TRUE %in% is.na(data[[id]]), "ERROR: NAs found in the market column")
   stopif(TRUE %in% is.null(data[[id]]), "ERROR: NULLs found in the market column")
   stopif('' %in% unique(data[[id]]), "ERROR: Blanks found in the market column")
@@ -710,7 +710,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 
 #' Given a test market, analyze the impact of fake interventions (prospective power analysis)
 #'
-#' \code{prospective_power} Analyzes the causal impact of a fake intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
+#' \code{test_fake_lift} Analyzes the causal impact of a fake intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
 #' The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 #'
 #' @param matched_markets A matched_market object created by the market_matching function
@@ -734,11 +734,11 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' 
 #' @import ggplot2
 
-#' @export prospective_power
+#' @export test_fake_lift
 #' @examples
 #' library(MarketMatching)
 #' ##-----------------------------------------------------------------------
-#' ## Create a power curve for various levels of lift
+#' ## Create a pseudo power curve for various levels of lift
 #' ## Since this is weather data it is a not a very meaningful example. 
 #' ## This is merely to demonstrate the function.
 #' ##-----------------------------------------------------------------------
@@ -755,7 +755,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'                    start_match_period="2014-01-01",
 #'                    end_match_period="2014-10-01")
 #' library(CausalImpact)
-#' results <- prospective_power(matched_markets=mm,
+#' results <- test_fake_lift(matched_markets=mm,
 #'                      test_market="CPH",
 #'                      parallel=FALSE,
 #'                      lift_pattern_type="random",
@@ -764,7 +764,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'                      prior_level_sd=0.002, 
 #'                      max_fake_lift=0.1)
 #' @usage
-#' prospective_power(matched_markets=NULL,
+#' test_fake_lift(matched_markets=NULL,
 #'           bsts_modelargs=NULL,
 #'           test_market=NULL,
 #'           end_fake_post_period=NULL,
@@ -787,7 +787,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' @importFrom scales percent
 #' @importFrom data.table rbindlist
 
-prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_fake_lift=NULL, parallel=FALSE, steps=10, lift_pattern_type="random"){
+test_fake_lift <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_fake_lift=NULL, parallel=FALSE, steps=10, lift_pattern_type="random"){
   
   ## use nulling to avoid CRAN notes
   id_var <- NULL
@@ -876,7 +876,6 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   cat("\n")
   cat(paste0("\tMax Fake Lift: ", max_fake_lift, "\n"))
   cat("\n")
-  cat("\n")
   pre.period <- c(as.Date(MatchingStartDate), as.Date(MatchingEndDate))
   post.period <- c(as.Date(post_period_start_date), as.Date(post_period_end_date))
   set.seed(2015)
@@ -891,9 +890,16 @@ prospective_power <- function(matched_markets=NULL, bsts_modelargs=NULL, test_ma
   if (toupper(lift_pattern_type)=="RANDOM"){
      pattern <- range01(sample(1:100, length(y_post), replace=T))
      s <- 1/mean(pattern)
-  } else{
+     cat(paste0("\tLift pattern: ", lift_pattern_type, "\n"))
+     cat("\n")
+  } else if (toupper(lift_pattern_type)=="CONSTANT"){
     pattern <- rep(0.5, length(y_post))
     s <- 1/mean(pattern)
+    cat(paste0("\tLift pattern: ", lift_pattern_type, "\n"))
+    cat("\n")
+  } else{
+    cat(paste0("\tLift pattern ", lift_pattern_type, " not recognized. Using random lift \n"))
+    cat("\n")
   }
 
   if (parallel==FALSE){

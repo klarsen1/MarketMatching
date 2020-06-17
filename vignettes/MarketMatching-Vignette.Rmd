@@ -162,12 +162,12 @@ mm <- best_matches(data=weather,
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 #' ##-----------------------------------------------------------------------
-#' ## Power analysis for a fake intervention ending at 2015-10-01
+#' ## Pseudo power analysis for a fake intervention ending at 2015-10-01
 #' ## The maximum lift analyzed is 10 percent, the minimum is 0 percent
 #' ## Since this is weather data it is a not a very meaningful example. 
 #' ## This is merely to demonstrate the functionality.
 #' ##-----------------------------------------------------------------------
-power <- MarketMatching::prospective_power(matched_markets = mm, 
+power <- MarketMatching::test_fake_lift(matched_markets = mm, 
                                       test_market = "CPH", 
                                       end_fake_post_period = "2015-10-01", 
                                       prior_level_sd = 0.002, 
