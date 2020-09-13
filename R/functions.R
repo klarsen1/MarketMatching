@@ -263,7 +263,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   
   if (is.null(matches)){
     if (is.null(markets_to_be_matched) & suggest_market_splits==TRUE){
-      matches <- 1000000
+      matches <- 100
     } else{
       matches <- 5
     }
