@@ -3,7 +3,6 @@
 \docType{package}
 \name{MarketMatching}
 \alias{MarketMatching}
-\alias{MarketMatching-package}
 \title{Market Matching and Causal Impact Inference}
 \description{
 For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention (prospective or historical).

@@ -1,12 +1,21 @@
 Package: MarketMatching
 
-Version: 1.1.3
+Version: 1.1.4
+
+MarketMacthing version 1.1.4
+============================
+
+Changed MAPE calculation to not re-scale the residuals. Minor bug fixes.
+Changed test\_fake\_lift() so that the underlying BSTS model is not
+refit at every step on the curve. Added the parameter
+suggest\_market\_splits to best\_matchess() to provide a market split
+recommendations.
 
 MarketMacthing version 1.1.3
 ============================
 
-Added the function prospective\_power() to calculate power curves. Fixed
-minor bugs.
+Added the function test\_fake\_lift() to calculate pseudo power curves.
+Fixed minor bugs.
 
 MarketMacthing version 1.1.2
 ============================

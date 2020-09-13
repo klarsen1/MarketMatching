@@ -5,22 +5,18 @@
 \title{Given a test market, analyze the impact of fake interventions (prospective power analysis)}
 \usage{
 test_fake_lift(matched_markets=NULL,
-          bsts_modelargs=NULL,
           test_market=NULL,
           end_fake_post_period=NULL,
           alpha=0.05,
           prior_level_sd=0.01,
-          lift_pattern_type="random",
+          lift_pattern_type="constant",
           control_matches=5, 
           nseasons=NULL, 
           max_fake_lift=NULL, 
-          parallel=FALSE,
           steps=10)
 }
 \arguments{
-\item{matched_markets}{A matched_market object created by the market_matching function}
-
-\item{bsts_modelargs}{A list() that passes model parameters directly to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)
+\item{matched_markets}{A matched_market object created by the market_matching function
 This parameter will overwrite the values specified in prior_level_sd and nseasons. ONLY use this if you're using intricate bsts settings
 For most use-cases, using the prior_level_sd and nseasons parameters should be sufficient}
 
@@ -38,14 +34,12 @@ This parameter will be overwritten if you're using the bsts_modelargs parameter}
 
 \item{nseasons}{Seasonality for the bsts model -- e.g., 52 for weekly seasonality}
 
-\item{max_fake_lift}{The maximum fake lift -- e.g., 0.1 means that the minimum lift evaluated is approximately 10%
+\item{max_fake_lift}{The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10% and the min lift is -10%
 Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified}
-
-\item{parallel}{set to TRUE for faster execution (default is FALSE)}
 
 \item{steps}{The number of steps used to calculate the power curve (default is 10)}
 
-\item{lift_pattern_type}{Lift pattern. Default is random. The other choice is a constant lift (level shift).}
+\item{lift_pattern_type}{Lift pattern. Default is constant. The other choice is a random lift..}
 }
 \value{
 Returns an object of type \code{matched_market_power}. The object has the
@@ -53,6 +47,8 @@ following elements:
 \item{\code{ResultsData}}{The results stored in a data.frame}
 \item{\code{ResultsGraph}}{The results stored in a ggplot graph}
 \item{\code{LiftPattern}}{The random pattern applied to the lift}
+\item{\code{FitCharts}}{The underlying actual versus fitted charts for each fake lift} 
+\item{\code{FitData}}{The underlying actual versus fitted data for each fake lift}
 }
 \description{
 \code{test_fake_lift} Analyzes the causal impact of a fake intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
@@ -61,7 +57,7 @@ The function returns an object of type "market_inference" which contains the est
 \examples{
 library(MarketMatching)
 ##-----------------------------------------------------------------------
-## Create a power curve for various levels of lift
+## Create a pseudo power curve for various levels of lift
 ## Since this is weather data it is a not a very meaningful example. 
 ## This is merely to demonstrate the function.
 ##-----------------------------------------------------------------------
@@ -71,7 +67,6 @@ mm <- best_matches(data=weather,
                    markets_to_be_matched=c("CPH", "SFO"),
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
-                   parallel=FALSE,
                    warping_limit=1, # warping limit=1
                    dtw_emphasis=1, # rely only on dtw for pre-screening
                    matches=5, # request 5 matches
@@ -80,8 +75,7 @@ mm <- best_matches(data=weather,
 library(CausalImpact)
 results <- test_fake_lift(matched_markets=mm,
                      test_market="CPH",
-                     parallel=FALSE,
-                     lift_pattern_type="random",
+                     lift_pattern_type="constant",
                      control_matches=5, # use all 5 matches for inference
                      end_fake_post_period="2015-12-15",
                      prior_level_sd=0.002, 

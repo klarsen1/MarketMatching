@@ -8,9 +8,9 @@ best_matches(data=NULL,
              markets_to_be_matched=NULL,
              id_variable=NULL,
              date_variable=NULL,
+             suggest_market_splits=FALSE,
              matching_variable=NULL,
              parallel=TRUE,
-             clusters=FALSE,
              warping_limit=1,
              ncusters=NULL,
              start_match_period=NULL,
@@ -48,9 +48,8 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 An emphasis of 0.5 would yield equal weighting.}
 
-\item{clusters}{if set to TRUE, a time series clustering is applied and added to the output data.frame. Default is FALSE.}
-
-\item{nclusters}{the number of desired clusters. Default is NULL. If NULL, clusters will be chosen based on the a tree with a cutoff at height=0.7.}
+\item{suggest_market_splits}{if set to TRUE, best_matches will return a suggested tets/control split based on correlation and market sizes. Default is FALSE.
+For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the
@@ -61,6 +60,7 @@ following elements:
 \item{\code{MarketID}}{The name of the market identifier}
 \item{\code{MatchingMetric}}{The name of the matching variable}
 \item{\code{DateVariable}}{The name of the date variable}
+\item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
 }
 \description{
 \code{best_matches} finds the best matching control markets for each market in the dataset

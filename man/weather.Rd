@@ -4,12 +4,14 @@
 \name{weather}
 \alias{weather}
 \title{Weather dataset}
-\format{A time series dataset with 6,935 rows and 3 variables (19 airports and 365 days):
+\format{
+A time series dataset with 6,935 rows and 3 variables (19 airports and 365 days):
 \itemize{
   \item Area: Airport code
   \item Date: Date
   \item Mean_TemperatureF: Average temperature
-}}
+}
+}
 \usage{
 weather
 }

@@ -9,9 +9,17 @@ CMean <- function(b) {
   return(0)
 }
 
+logplus <- function(x){
+  sapply(x, function(x) {if (x<=0){
+    return(0.00)
+  } else{
+    return(log(x))
+  }})
+}
+
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
-#' @importFrom stats cor var lm na.omit
+#' @importFrom stats cor var na.omit
 
 calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limit, matches, dtw_emphasis){
   ## Nulling to avoid CRAN notes
@@ -22,11 +30,12 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   dist_rank <- NULL
   corr_rank <- NULL
   combined_rank <- NULL
+  messages <- NULL
 
   row <- 1
   ThisMarket <- markets_to_be_matched[i]
-  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=7))
-  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "ABSSUM", "RAWDIST")
+  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=9))
+  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "SUMTEST", "SUMCNTL", "RAWDIST", "Correlation_of_logs")
   messages <- 0
   # For each market
   for (j in 1:length(unique(data$id_var))){
@@ -38,7 +47,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     test <- mkts[[1]]
     ref <- mkts[[2]]
     dates <- mkts[[3]]
-    abssum <- NA
+    sum_test <- NA
+    sum_cntl <- NA
     rawdist <- NA
     # If insufficient data or no variance
     if ((stats::var(test)==0 | length(test)<=2*warping_limit+1)){
@@ -48,9 +58,10 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     # If data and variance are sufficient and test vector was valid
     if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       if (dtw_emphasis>0){
-        abssum <- abs(sum(test))
+        sum_test <- abs(sum(test))
+        sum_cntl <- abs(sum(ref))
         rawdist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance 
-        dist <- rawdist / abssum
+        dist <- rawdist / sum_test
       } else{
         dist <- 0
       }
@@ -58,8 +69,10 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "RelativeDistance"] <- dist
       distances[row, "Skip"] <- FALSE
       distances[row, "Length"] <- length(test)
-      distances[row, "ABSSUM"] <- abssum
+      distances[row, "SUMTEST"] <- sum_test
+      distances[row, "SUMCNTL"] <- sum_cntl
       distances[row, "RAWDIST"] <- rawdist
+      distances[row, "Correlation_of_logs"] <- cor(logplus(test), logplus(ref))
     } else{
       if (ThisMarket != ThatMarket){
          messages <- messages + 1
@@ -68,14 +81,19 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "RelativeDistance"] <- NA
       distances[row, "Correlation"] <- NA
       distances[row, "Length"] <- NA
-      distances[row, "ABSSUM"] <- NA
+      distances[row, "SUMTEST"] <- NA
+      distances[row, "SUMCNTL"] <- NA
       distances[row, "RAWDIST"] <- NA
+      distances[row, "Correlation_of_logs"] <- NA
+      
     }
     row <- row + 1
   }
   
   if(messages > 0){
     cat(paste0(messages, " markets were not matched with ", ThisMarket, " due to insufficient data or no variance."))
+    cat("\n")
+    cat("\n")
   }
   
   distances$matches <- matches
@@ -111,11 +129,11 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(date_variable %in% names(data), FALSE, "ERROR: date variable not found in input data")
   stopif(matching_variable %in% names(data), FALSE, "ERROR: matching metric not found in input data")
   stopif(length(unique(data[[id]]))>1, FALSE, "ERROR: Need at least 2 unique markets")
-  stopif(TRUE %in% is.na(data[[id]]), "ERROR: NAs found in the market column")
-  stopif(TRUE %in% is.null(data[[id]]), "ERROR: NULLs found in the market column")
-  stopif('' %in% unique(data[[id]]), "ERROR: Blanks found in the market column")
-  stopif(TRUE %in% is.na(data[[matching_variable]]), "ERROR: NAs found in the matching variable")
-  stopif(class(data[[date_variable]]) != "Date", "ERROR: date_variable is not a Date. Check your data frame.")
+  stopif(TRUE %in% is.na(data[[id]]), TRUE, "ERROR: NAs found in the market column")
+  stopif(TRUE %in% is.null(data[[id]]), TRUE, "ERROR: NULLs found in the market column")
+  stopif('' %in% unique(data[[id]]), TRUE, "ERROR: Blanks found in the market column")
+  stopif(TRUE %in% is.na(data[[matching_variable]]), TRUE, "ERROR: NAs found in the matching variable")
+  stopif(class(data[[date_variable]]) != "Date", TRUE, "ERROR: date_variable is not a Date. Check your data frame.")
 }
 
 #' @importFrom reshape2 melt dcast
@@ -145,8 +163,8 @@ create_market_vectors <- function(data, test_market, ref_market){
 
 mape_no_zeros <- function(test, ref){
   d <- cbind.data.frame(test, ref)
-  d <- subset(d, abs(test)>0)
-  return(mean(abs(stats::lm(test ~ ref, data=d)$residuals)/abs(d$test)))
+  d <- subset(d, test>0 & ref>0)
+  return(mean(abs(d$test - d$ref)/d$test))
 }
 
 dw <- function(y, yhat){
@@ -175,28 +193,23 @@ dw <- function(y, yhat){
 #' which means that a single query value can be mapped to at most 2 reference values.
 #' @param start_match_period the start date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"
+#' @param suggest_market_splits if set to TRUE, best_matches will return a suggested tets/control split based on correlation and market sizes. Default is FALSE.
+#' For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
 #' @param end_match_period the end date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
-#' @param clusters if set to TRUE, a time series clustering is applied and added to the output data.frame. Default is FALSE.
-#' @param nclusters the number of desired clusters. Default is NULL. If NULL, clusters will be chosen based on the a tree with a cutoff at height=0.7.
 #' @import foreach
 #' @importFrom parallel detectCores
-#' @importFrom data.table rbindlist
 #' @import CausalImpact
 #' @import dplyr
 #' @import iterators
 #' @import utils
 #' @import dtw
-#' @importFrom TSclust diss
-#' @importFrom  cluster pam
-#' @importFrom stats hclust
 #' @importFrom reshape2 melt
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
-#' @importFrom tidyr pivot_wider
 #'
 #' @export best_matches
 #' @examples
@@ -220,9 +233,9 @@ dw <- function(y, yhat){
 #'              markets_to_be_matched=NULL,
 #'              id_variable=NULL,
 #'              date_variable=NULL,
+#'              suggest_market_splits=FALSE,
 #'              matching_variable=NULL,
 #'              parallel=TRUE,
-#'              clusters=FALSE,
 #'              warping_limit=1,
 #'              ncusters=NULL,
 #'              start_match_period=NULL,
@@ -238,14 +251,23 @@ dw <- function(y, yhat){
 #' \item{\code{MarketID}}{The name of the market identifier}
 #' \item{\code{MatchingMetric}}{The name of the matching variable}
 #' \item{\code{DateVariable}}{The name of the date variable}
+#' \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
 
-
-best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=5, dtw_emphasis=1, clusters=FALSE, nclusters=NULL){
+best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE){
 
   ## Nulling to avoid angry notes
   match_var <- NULL
   id_var <- NULL
   date_var <- NULL
+  suggested_split <- NULL
+  
+  if (is.null(matches)){
+    if (is.null(markets_to_be_matched) & suggest_market_splits==TRUE){
+      matches <- 1000000
+    } else{
+      matches <- 5
+    }
+  }
   
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
@@ -265,69 +287,54 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   data$date_var <- data[[date_variable]]
   data$id_var <- data[[id_variable]]
   data$match_var <- data[[matching_variable]]
+  
+  ## check for dups
+  ddup <- dplyr::distinct(data, id_var, date_var)
+  stopif(nrow(ddup)<nrow(data), TRUE, "ERROR: There are date/market duplicates in the input data")
+  rm(ddup)
 
-  data <- dplyr::arrange(data, id_var, date_var) %>% ungroup() %>% select(id_var, date_var, match_var)
+  ## reduce the width of the data.frame
+  data <- dplyr::arrange(data, id_var, date_var) %>% 
+    ungroup() %>% 
+    dplyr::select(id_var, date_var, match_var)
+
   ## save a reduced version of the data
   saved_data <- data
+  
+  ## set up a list to hold all distance matrices
+  all_distances <- list()
+
+  ## filter the dates
+  data <- 
+    dplyr::filter(data, date_var>=as.Date(start_match_period) & date_var<=as.Date(end_match_period)) %>%
+    dplyr::group_by(id_var) %>%
+    dplyr::mutate(rows=max(row_number())) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(max_rows=max(rows)) %>%
+    dplyr::mutate(short=(rows<max_rows)) %>%
+    dplyr::select(-rows, -max_rows, -short) 
+  
+  ## check if any data is left
+  stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
 
   ## get a vector of all markets that matches are wanted for. Check to ensure markets_to_be_matched exists in the data.
-  if(is.null(markets_to_be_matched)) {
+  segmentation <- FALSE
+  if(is.null(markets_to_be_matched)){
     markets_to_be_matched <- unique(data$id_var)
+    segmentation <- TRUE
   }else{
     markets_to_be_matched <- unique(markets_to_be_matched)
     for (k in 1:length(markets_to_be_matched)){
       stopif(markets_to_be_matched[k] %in% unique(data$id_var), FALSE, paste0("test market ", markets_to_be_matched[k], " does not exist"))
     }
   }
-
-  ## set up a list to hold all distance matrices
-  all_distances <- list()
-
-  ## filter the dates
-  data <- dplyr::filter(data, date_var>=as.Date(start_match_period) & date_var<=as.Date(end_match_period)) %>%
-    dplyr::group_by(id_var) %>%
-    dplyr::mutate(rows=max(row_number())) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(max_rows=max(rows)) %>%
-    dplyr::mutate(short=(rows<max_rows)) %>%
-    dplyr::select(-rows, -max_rows)
-    
-  ## check if any data is left
-  stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
   
-  ## run the clusters
-  if (clusters==TRUE){
-    wide <- 
-      dplyr::filter(data, short==FALSE) %>%
-      dplyr::select(-short) %>%
-      tidyr::pivot_wider(names_from = id_var, values_from = match_var) %>%
-      dplyr::select(-date_var)
-
-    dis <- TSclust::diss(wide, "COR")
-    if (is.null(clusters)){
-      tree <- stats::hclust(dis)
-      nclusters <- length(tree[tree$height<0.7])
-    }
-    clust <- cluster::pam(dis, k=nclusters)$clustering
-    clusters_df <- data.frame(cbind(melt(clust), as.character(row.names(melt(clust)))), stringsAsFactors = FALSE)
-    row.names(clusters_df) <- NULL
-    clusters_df[,2] <- as.character(clusters_df[,2])
-    
-    clusters_test <- clusters_df
-    names(clusters_test) <- c("ClusterTest", id_variable)
-    
-    clusters_control <- clusters_df
-    names(clusters_control) <- c("ClusterBestControl", "BestControl")
-  }
-  
-  data <- select(data, -short)
-
   ## loop through markets and compute distances
   if (parallel == FALSE) {
     for (i in 1:length(markets_to_be_matched)) {
         all_distances[[i]] <- calculate_distances(markets_to_be_matched, data, id_variable, i, warping_limit, matches, dtw_emphasis)
     }
-    shortest_distances <- data.frame(rbindlist(all_distances))
+    shortest_distances <- data.frame(dplyr::bind_rows(all_distances))
   }else{
     ncore <- detectCores() - 1
     registerDoParallel(ncore)
@@ -335,24 +342,62 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         {
             calculate_distances(markets_to_be_matched, data, id_variable, i, warping_limit, matches, dtw_emphasis)
         }
-    shortest_distances <- data.frame(rbindlist(loop_result))
+    shortest_distances <- data.frame(dplyr::bind_rows(loop_result))
     stopImplicitCluster()
   }
-
-  ### Merge the clusters
-  if (clusters==TRUE){
-    shortest_distances <- 
-      left_join(shortest_distances, clusters_test, by=id_variable) %>%
-      left_join(clusters_control, by="BestControl") %>%
-      ungroup()
+  
+  if (segmentation==TRUE){
+    sizes <- shortest_distances
+    sizes$market <- sizes[[id_variable]]
+    markets <- length(unique(sizes$market))
+    maxbins <- floor(markets/2)
+    bins <- maxbins
+    if (maxbins>20){
+      bins <- 20
+    } else if (maxbins==0){
+      bins <- 1
+    } 
+    sizes <- dplyr::select(sizes, market, SUMTEST) %>%
+      dplyr::distinct(market, .keep_all=TRUE) %>%
+      dplyr::mutate(
+        rank=rank(-SUMTEST, ties.method="random"), 
+        DECILE=ntile(rank, bins)) %>%
+      dplyr::select(market, DECILE) %>%
+      dplyr::group_split(DECILE)
+    optimal_list <- list()
+    j <- 1
+    for (i in 1:length(sizes)){
+      bin <- dplyr::pull(sizes[[i]], market)
+      tdf <- shortest_distances
+      tdf$test_market <- tdf[[id_variable]]
+      tdf <- dplyr::filter(tdf, test_market %in% bin & BestControl %in%  bin) %>%
+        dplyr::arrange(-Correlation_of_logs) %>%
+        dplyr::mutate(
+               control_market=BestControl, 
+               Segment=i)
+      rowsleft <- nrow(tdf)
+      while(rowsleft>1){
+        optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "SUMTEST", "SUMCNTL")]
+        test <- tdf[1,"test_market"]
+        cntl <- tdf[1,"control_market"]
+        tdf <- dplyr::filter(tdf, !(test_market %in% c(test, cntl)))
+        tdf <- dplyr::filter(tdf, !(control_market %in% c(test, cntl))) %>%
+          dplyr::arrange(-Correlation_of_logs)
+        rowsleft <- nrow(tdf)
+        j <- j+1
+      }  
+     suggested_split <- dplyr::bind_rows(optimal_list) %>%
+        ungroup() %>%
+        dplyr::arrange(Segment, -Correlation_of_logs) %>%
+        dplyr::mutate(PairRank=row_number())
+    }
   }
   
   ### Return the results
-  object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable)
+  object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable, SuggestedTestControlSplits=suggested_split)
   class(object) <- "matched_market"
   return (object)
 }
-
 
 #' Given a test market, analyze the impact of an intervention
 #'
@@ -714,11 +759,10 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 #'
 #' @param matched_markets A matched_market object created by the market_matching function
-#' @param bsts_modelargs A list() that passes model parameters directly to bsts -- such as list(niter = 1000, nseasons = 52, prior.level.sd=0.1)
 #' This parameter will overwrite the values specified in prior_level_sd and nseasons. ONLY use this if you're using intricate bsts settings
 #' For most use-cases, using the prior_level_sd and nseasons parameters should be sufficient
 #' @param test_market The name of the test market (character)
-#' @param lift_pattern_type Lift pattern. Default is random. The other choice is a constant lift (level shift).
+#' @param lift_pattern_type Lift pattern. Default is constant. The other choice is a random lift..
 #' @param end_fake_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
 #' @param alpha Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals
 #' @param prior_level_sd Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
@@ -726,9 +770,8 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' This parameter will be overwritten if you're using the bsts_modelargs parameter
 #' @param control_matches Number of matching control markets to use in the analysis (default is 5)
 #' @param nseasons Seasonality for the bsts model -- e.g., 52 for weekly seasonality
-#' @param max_fake_lift The maximum fake lift -- e.g., 0.1 means that the minimum lift evaluated is approximately 10%
+#' @param max_fake_lift The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10% and the min lift is -10%
 #' Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified
-#' @param parallel set to TRUE for faster execution (default is FALSE)
 #' @param steps The number of steps used to calculate the power curve (default is 10)
 #' 
 #' 
@@ -748,7 +791,6 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'                    markets_to_be_matched=c("CPH", "SFO"),
 #'                    date_variable="Date",
 #'                    matching_variable="Mean_TemperatureF",
-#'                    parallel=FALSE,
 #'                    warping_limit=1, # warping limit=1
 #'                    dtw_emphasis=1, # rely only on dtw for pre-screening
 #'                    matches=5, # request 5 matches
@@ -757,24 +799,21 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' library(CausalImpact)
 #' results <- test_fake_lift(matched_markets=mm,
 #'                      test_market="CPH",
-#'                      parallel=FALSE,
-#'                      lift_pattern_type="random",
+#'                      lift_pattern_type="constant",
 #'                      control_matches=5, # use all 5 matches for inference
 #'                      end_fake_post_period="2015-12-15",
 #'                      prior_level_sd=0.002, 
 #'                      max_fake_lift=0.1)
 #' @usage
 #' test_fake_lift(matched_markets=NULL,
-#'           bsts_modelargs=NULL,
 #'           test_market=NULL,
 #'           end_fake_post_period=NULL,
 #'           alpha=0.05,
 #'           prior_level_sd=0.01,
-#'           lift_pattern_type="random",
+#'           lift_pattern_type="constant",
 #'           control_matches=5, 
 #'           nseasons=NULL, 
 #'           max_fake_lift=NULL, 
-#'           parallel=FALSE,
 #'           steps=10)
 #'
 #' @return Returns an object of type \code{matched_market_power}. The object has the
@@ -782,12 +821,12 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' \item{\code{ResultsData}}{The results stored in a data.frame}
 #' \item{\code{ResultsGraph}}{The results stored in a ggplot graph}
 #' \item{\code{LiftPattern}}{The random pattern applied to the lift}
-#' 
+#' \item{\code{FitCharts}}{The underlying actual versus fitted charts for each fake lift} 
+#' \item{\code{FitData}}{The underlying actual versus fitted data for each fake lift} 
 #' @import zoo
 #' @importFrom scales percent
-#' @importFrom data.table rbindlist
 
-test_fake_lift <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_fake_lift=NULL, parallel=FALSE, steps=10, lift_pattern_type="random"){
+test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_fake_lift=NULL, steps=10, lift_pattern_type="constant"){
   
   ## use nulling to avoid CRAN notes
   id_var <- NULL
@@ -795,27 +834,13 @@ test_fake_lift <- function(matched_markets=NULL, bsts_modelargs=NULL, test_marke
   date_var <- NULL
   Response <- NULL
   match_var <- NULL
+  counter <- NULL
   s <- NULL
+  m <- NULL
   
-  if (steps>20 & parallel==FALSE){steps <- 20}
-  if (steps<5){steps <- 5}
+  if (steps<10){steps <- 10}
 
   stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
-  
-  ## Model settings
-  if (!is.null(bsts_modelargs) & !is.null(nseasons)){
-    cat("\tNOTE: You're passing arguments directly to bsts while also specifying nseasons \n")
-    cat("\tNOTE: bsts_modelargs will overwrite nseasons \n")
-    cat("\n")
-    cat("\n")
-  }
-  if (is.null(bsts_modelargs)){
-    if (is.null(nseasons)){
-      bsts_modelargs <- list(prior.level.sd=prior_level_sd)
-    } else{
-      bsts_modelargs <- list(nseasons=nseasons, prior.level.sd=prior_level_sd)
-    }
-  } 
   
   ## copy the distances
   mm <- dplyr::filter(matched_markets$BestMatches, rank<=control_matches)
@@ -865,13 +890,15 @@ test_fake_lift <- function(matched_markets=NULL, bsts_modelargs=NULL, test_marke
   cat(paste0("\tFake post Period End Date: ", post_period_end_date, "\n"))
   cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
   cat(paste0("\tbsts parameters: \n"))
-  modelparms <- names(bsts_modelargs)
-  for (p in 1:length(bsts_modelargs)){
-    cat(paste0("\t  ", modelparms[p], ": ", bsts_modelargs[p], "\n"))
+  if (is.null(nseasons)){
+    cat("\tNo seasonality component (controlled for by the matched markets) \n")
+    cat("\n")
+    nseaons <- 1
   }
-  if (!("nseasons" %in% modelparms)){
-    cat("\t  No seasonality component (controlled for by the matched markets) \n")
-  }
+  
+  ## model arguments (no standardization of data since we have to re-use the model)
+  bsts_modelargs=list(standardize.data=FALSE, niter=1000, prior.level.sd=prior_level_sd, season.duration=1, dynamic.regression=FALSE, max.flips=-1, nseasons=nseasons)
+  
   cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
   cat("\n")
   cat(paste0("\tMax Fake Lift: ", max_fake_lift, "\n"))
@@ -893,31 +920,39 @@ test_fake_lift <- function(matched_markets=NULL, bsts_modelargs=NULL, test_marke
      cat(paste0("\tLift pattern: ", lift_pattern_type, "\n"))
      cat("\n")
   } else if (toupper(lift_pattern_type)=="CONSTANT"){
-    pattern <- rep(0.5, length(y_post))
+    pattern <- rep(1, length(y_post))
     s <- 1/mean(pattern)
     cat(paste0("\tLift pattern: ", lift_pattern_type, "\n"))
     cat("\n")
   } else{
-    cat(paste0("\tLift pattern ", lift_pattern_type, " not recognized. Using random lift \n"))
+    cat(paste0("\tLift pattern ", lift_pattern_type, " not recognized. Using constant lift \n"))
+    lift_pattern_type <- "constant"
     cat("\n")
   }
 
-  if (parallel==FALSE){
-    power <- list()
-    charts <- list()
-    for (i in 0:steps){
-       y_new <- c(y_pre, (stepsize*i*pattern*s+1)*y_post)
+  power <- list()
+  charts <- list()
+  avps <- list()
+  counter <- 0
+    for (i in (-steps):steps){
+       y_post_new <- (stepsize*i*pattern*s+1)*y_post
+       y_new <- c(y_pre, y_post_new)
        fake_lift=sum((stepsize*i*pattern*s+1)*y_post)/sum(y_post)-1
-       ts <- zoo(cbind.data.frame(y_new, ref), date)
-       impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
+       ts <- zoo(cbind(y_new, ref), date)
+       if (counter==0){
+          impact <- CausalImpact(data=ts, pre.period=pre.period, post.period=post.period, alpha=alpha, model.args=bsts_modelargs)
+          m <- impact$model$bsts.model
+       } else{
+         impact <- CausalImpact(post.period.response = y_post_new, alpha=alpha, bsts.model=m)
+       }
        prob_causal <- 1-impact$summary$p[2]
-       power[[i+1]] <- data.frame(fake_lift, prob_causal)
+       power[[counter+1]] <- data.frame(fake_lift, prob_causal)
        avp <- data.frame(cbind(date, data.frame(impact$series)[,c("response", "point.pred", "point.pred.lower", "point.pred.upper")]))
        names(avp) <- c("Date", "Response", "Predicted", "lower_bound", "upper_bound")
-       avp$test_market <- test_market
        ymin <- min(min(impact$series$response), min(impact$series$point.pred.lower), min(ref), min(y))
        ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(y))
-       charts[[i+1]] <- ggplot(data=avp, aes(x=Date)) +
+       avps[[counter+1]] <- avp
+       charts[[counter+1]] <- ggplot(data=avp, aes(x=Date)) +
          geom_line(aes(y=Response, colour = "Observed"), size=1.2) +
          geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), fill="grey", alpha=0.3) +
          geom_line(aes(y=Predicted, colour = "Expected"), size=1.2) +
@@ -925,35 +960,18 @@ test_fake_lift <- function(matched_markets=NULL, bsts_modelargs=NULL, test_marke
          geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
          scale_y_continuous(labels = scales::comma, limits=c(ymin, ymax)) +
          ggtitle(paste0("Test Market: ",test_market))
-       avp$test_market <- NULL
+       counter <- counter+1
     }
-    power_df <- data.frame(rbindlist(power))
-  } else{
-    ncore <- detectCores() - 1
-    registerDoParallel(ncore)
-    loop_result <- foreach(i = 0:steps) %dopar% 
-      {
-        y_new <- c(y_pre, (stepsize*i*pattern*s+1)*y_post)
-        fake_lift=sum((stepsize*i*pattern*s+1)*y_post)/sum(y_post)-1
-        ts <- zoo(cbind.data.frame(y_new, ref), date)
-        impact <- CausalImpact(ts, pre.period, post.period, alpha=alpha, model.args=bsts_modelargs)
-        prob_causal <- 1-impact$summary$p[2]
-        return(data.frame(fake_lift, prob_causal))
-      }
-    power_df <- data.frame(rbindlist(loop_result))
-    stopImplicitCluster()
-  }
-  
+  power_df <- data.frame(dplyr::bind_rows(power))
   power_chart <- ggplot(data=power_df, aes(x=fake_lift, y=prob_causal)) + 
     geom_line(size=2) + 
-    ylab(paste0("Probability of causal impact at alpha= ", alpha)) + 
-    xlab("Average Lift During Fake Post Period") + 
+    ylab(paste0("Probability of causal impact")) + 
+    xlab("Average Lift During the Fake Post Period") + 
     scale_y_continuous(labels = scales::percent) +
     scale_x_continuous(labels = scales::percent)
   
   ### return the results
-  object <- list(ResultsData=power_df, ResultsGraph=power_chart, LiftPattern=pattern, 
-                 ActualVersusFitted=charts)
+  object <- list(ResultsData=power_df, ResultsGraph=power_chart, LiftPattern=pattern, FitCharts=charts, FitData=avps)
   class(object) <- "matched_market_power"
   return (object)
 }
