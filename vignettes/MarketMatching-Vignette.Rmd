@@ -63,6 +63,7 @@ Hence, the package does *not* provide any new core functionality but it simplifi
 * Allows the user to choose how many markets are sent to the slab-and-prior model.
 * All plots are done in `ggplot2` and can easily be extracted and manipulated.
 * Allows the user to calculate the probability of a causal impact for fake interventions (prospective power curves).
+* Suggests optimal test/control pairs (in case this has not been decided) based on historical correlations and market sizes.
 
 # Example
 The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.
