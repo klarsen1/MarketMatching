@@ -13,6 +13,7 @@ MarketMacthing version 1.1.4
     provide a market split recommendations.
 -   You can now pass just 2 markets (no longer a requirement of 3+
     markets).
+-   Added more details on the numbers behind the distance calculations.
 
 MarketMacthing version 1.1.3
 ============================
