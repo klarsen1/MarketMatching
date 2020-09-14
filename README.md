@@ -149,6 +149,10 @@ Summary of features:
     slab-and-prior model.
 -   All plots are done in `ggplot2` and can easily be extracted and
     manipulated.
+-   Facilitates pseudo prospective epower analysis for geo-based
+    experiments.
+-   Provides suggested optimal test/control market pairs for future
+    studies (in case the test markets have not been identified).
 
 How to Install
 ==============
