@@ -261,14 +261,6 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   date_var <- NULL
   suggested_split <- NULL
   
-  if (is.null(matches)){
-    if (is.null(markets_to_be_matched) & suggest_market_splits==TRUE){
-      matches <- 100
-    } else{
-      matches <- 5
-    }
-  }
-  
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
   stopif(is.null(end_match_period), TRUE, "No end date provided")
@@ -287,6 +279,26 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   data$date_var <- data[[date_variable]]
   data$id_var <- data[[id_variable]]
   data$match_var <- data[[matching_variable]]
+  
+  if (is.null(markets_to_be_matched)==FALSE & suggest_market_splits==TRUE){
+    cat("The suggest_market_splits parameter has been turned off since markets_to_be_matched is not NULL \n")
+    cat("Set markets_to_be_matched to NULL if you want optimized pairs \n")
+    cat("\n")
+  } 
+
+  if (is.null(matches)){
+    if (is.null(markets_to_be_matched) & suggest_market_splits==TRUE){
+      matches <- length(unique(data$id_var))
+    } else{
+      matches <- 5
+    }
+  } else{
+    if (is.null(markets_to_be_matched) & suggest_market_splits==TRUE){
+      matches <- length(unique(data$id_var))
+      cat("The matches parameter has been overwritten to conduct a full search for optimized pairs \n")
+      cat("\n")
+    }  
+  }
   
   ## check for dups
   ddup <- dplyr::distinct(data, id_var, date_var)
@@ -891,16 +903,18 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
   cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
   cat(paste0("\tbsts parameters: \n"))
   if (is.null(nseasons)){
-    cat("\tNo seasonality component (controlled for by the matched markets) \n")
-    cat("\n")
+    cat("\t   No seasonality component (controlled for by the matched markets) \n")
     nseaons <- 1
   }
+  cat(paste0("\t   Prior level SD ", prior_level_sd))
+  cat("\n")
+  cat("\t   Good idea to run this at various levels of prior_level_sd (e.g., 0.0001 and 0.1")
+  cat("\n")
+  cat("\n")
   
   ## model arguments (no standardization of data since we have to re-use the model)
-  bsts_modelargs=list(standardize.data=FALSE, niter=1000, prior.level.sd=prior_level_sd, season.duration=1, dynamic.regression=FALSE, max.flips=-1, nseasons=nseasons)
+  bsts_modelargs=list(standardize.data=TRUE, niter=1000, prior.level.sd=prior_level_sd, season.duration=1, dynamic.regression=FALSE, max.flips=-1, nseasons=nseasons)
   
-  cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
-  cat("\n")
   cat(paste0("\tMax Fake Lift: ", max_fake_lift, "\n"))
   cat("\n")
   pre.period <- c(as.Date(MatchingStartDate), as.Date(MatchingEndDate))
@@ -935,11 +949,12 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
   avps <- list()
   counter <- 0
     for (i in (-steps):steps){
+       set.seed(2020)
        y_post_new <- (stepsize*i*pattern*s+1)*y_post
        y_new <- c(y_pre, y_post_new)
        fake_lift=sum((stepsize*i*pattern*s+1)*y_post)/sum(y_post)-1
        ts <- zoo(cbind(y_new, ref), date)
-       if (counter==0){
+       if (counter>=0){
           impact <- CausalImpact(data=ts, pre.period=pre.period, post.period=post.period, alpha=alpha, model.args=bsts_modelargs)
           m <- impact$model$bsts.model
        } else{
