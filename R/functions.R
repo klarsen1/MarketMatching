@@ -908,7 +908,7 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
   }
   cat(paste0("\t   Prior level SD ", prior_level_sd))
   cat("\n")
-  cat("\t   Good idea to run this at various levels of prior_level_sd (e.g., 0.0001 and 0.1")
+  cat("\t   Good idea to run this at various levels of prior_level_sd (e.g., 0.0001 and 0.1)")
   cat("\n")
   cat("\n")
   
