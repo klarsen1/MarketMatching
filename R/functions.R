@@ -57,9 +57,9 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     }
     # If data and variance are sufficient and test vector was valid
     if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
+      sum_test <- abs(sum(test))
+      sum_cntl <- abs(sum(ref))
       if (dtw_emphasis>0){
-        sum_test <- abs(sum(test))
-        sum_cntl <- abs(sum(ref))
         rawdist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance 
         dist <- rawdist / sum_test
       } else{
@@ -109,7 +109,12 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     dplyr::select(-dist_rank, -Skip, -combined_rank, -corr_rank) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
-    dplyr::select(-matches, -w)
+    dplyr::select(-matches, -w) %>%
+    dplyr::mutate(Correlation_of_logs=if_else(is.na(Correlation_of_logs), 0, Correlation_of_logs))
+  
+  if (dtw_emphasis==0){
+    distances$RelativeDistance <- NA
+  }
   
   return(distances)
 }
@@ -237,7 +242,6 @@ dw <- function(y, yhat){
 #'              matching_variable=NULL,
 #'              parallel=TRUE,
 #'              warping_limit=1,
-#'              ncusters=NULL,
 #'              start_match_period=NULL,
 #'              end_match_period=NULL,
 #'              matches=5,
@@ -401,7 +405,10 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
      suggested_split <- dplyr::bind_rows(optimal_list) %>%
         ungroup() %>%
         dplyr::arrange(Segment, -Correlation_of_logs) %>%
-        dplyr::mutate(PairRank=row_number())
+        dplyr::mutate(PairRank=row_number()) %>%
+        dplyr::mutate(v=SUMTEST+SUMCNTL, 
+                      percent_of_volume=cumsum(v)/sum(v)) %>%
+       dplyr::select(-v)
     }
   }
   
@@ -782,7 +789,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' This parameter will be overwritten if you're using the bsts_modelargs parameter
 #' @param control_matches Number of matching control markets to use in the analysis (default is 5)
 #' @param nseasons Seasonality for the bsts model -- e.g., 52 for weekly seasonality
-#' @param max_fake_lift The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10% and the min lift is -10%
+#' @param max_fake_lift The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10 percent and the min lift is -10 percent
 #' Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified
 #' @param steps The number of steps used to calculate the power curve (default is 10)
 #' 
@@ -838,7 +845,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' @import zoo
 #' @importFrom scales percent
 
-test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, nseasons=NULL, max_fake_lift=NULL, steps=10, lift_pattern_type="constant"){
+test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=NULL, nseasons=NULL, max_fake_lift=NULL, steps=10, lift_pattern_type="constant"){
   
   ## use nulling to avoid CRAN notes
   id_var <- NULL
@@ -853,9 +860,15 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
   if (steps<10){steps <- 10}
 
   stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
+
+  ## set the matches
+  if (is.null(control_matches)){
+    control_matches <- length(unique(matched_markets$Data$id_var))
+  } 
   
   ## copy the distances
   mm <- dplyr::filter(matched_markets$BestMatches, rank<=control_matches)
+  
   
   data <- matched_markets$Data
   mm$id_var <- mm[[names(mm)[1]]]
@@ -982,12 +995,144 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
     geom_line(size=2) + 
     ylab(paste0("Probability of causal impact")) + 
     xlab("Average Lift During the Fake Post Period") + 
+    geom_vline(xintercept = 0) +
     scale_y_continuous(labels = scales::percent) +
     scale_x_continuous(labels = scales::percent)
   
   ### return the results
   object <- list(ResultsData=power_df, ResultsGraph=power_chart, LiftPattern=pattern, FitCharts=charts, FitData=avps)
-  class(object) <- "matched_market_power"
+  class(object) <- "fake_lift_analysis"
   return (object)
 }
 
+#' Roll up the suggested test/control optimal pairs for pseudo power analysis (testing fake lift)
+#'
+#' \code{roll_up_optimal_pairs} Takes the suggested optimal pairs and aggregates the data for pseudo power analysis (test_fake_lift).
+#' You run this function and then pass the result (a matched markets object) to test_fake_lift.
+#' @param matched_markets A matched market object from best_matches. 
+#' @param percent_cutoff The percent of data (by volume) to be included in the future study. Default is 1. 0.5 would be 50 percent.
+#' @param synthetic If set to TRUE, the control markets are not aggregated so BSTS can determine weights for each market and create a synthetic control.
+#' If set to FALSE then the control markets are aggregated and each market will essentially get the same weight.
+#' If you have many control markets (say, more than 25) it is recommended to choose FALSE. Default is FALSE.
+#' @import dplyr
+#'
+#' @export roll_up_optimal_pairs
+#' @examples
+#' ##-----------------------------------------------------------------------
+#' ## Generate the suggested test/control pairs
+#' ##-----------------------------------------------------------------------
+#' library(MarketMatching)
+#' data(weather, package="MarketMatching")
+#' mm <- best_matches(data=weather, 
+#'                    id="Area",
+#'                    date_variable="Date",
+#'                    matching_variable="Mean_TemperatureF",
+#'                    parallel=FALSE,
+#'                    suggest_market_splits=TRUE,
+#'                    start_match_period="2014-01-01",
+#'                    end_match_period="2014-10-01")
+#'                    
+#' ##-----------------------------------------------------------------------
+#' ## Roll up the pairs to generate test and control markets
+#' ## Synthetic=FALSE means that the control markets will be aggregated 
+#' ## -- i.e., equal weighhs in CausalImpact
+#' ##-----------------------------------------------------------------------
+#'                    
+#' rollup <- roll_up_optimal_pairs(matched_markets=mm, 
+#'                                 perc_cutoff=1, 
+#'                                 synthetic=FALSE)
+#'                                 
+#' ##-----------------------------------------------------------------------
+#' ## Pseudo power analysis
+#' ##-----------------------------------------------------------------------
+#' 
+#' results <- test_fake_lift(matched_markets=rollup,
+#'                      test_market="TEST",
+#'                      lift_pattern_type="constant",
+#'                      end_fake_post_period="2015-12-15",
+#'                      prior_level_sd=0.002, 
+#'                      max_fake_lift=0.1)
+#'
+#' @usage
+#' rollup <- roll_up_optimal_pairs(matched_markets=NULL,
+#'                                 percent_cutoff=1,
+#'                                 synthetic=FALSE)
+#'
+#' @return Returns an object of type \code{market_matching}. The object has the
+#' following elements:
+#' \item{\code{BestMatches}}{A data.frame that contains the best matches for each market in the input dataset}
+#' \item{\code{Data}}{The raw data used to do the matching}
+#' \item{\code{MarketID}}{The name of the market identifier}
+#' \item{\code{MatchingMetric}}{The name of the matching variable}
+#' \item{\code{DateVariable}}{The name of the date variable}
+#' \item{\code{SuggestedTestControlSplits}}{Always NULL}
+
+roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthetic=FALSE){
+  
+  s <- NULL
+  e <- NULL
+  
+  ###  check out the matched markets object
+  stopif(is.null(matched_markets), TRUE, "The matched_markets object is null")
+  cat("\n")
+  
+  stopif(class(matched_markets)=="matched_market", FALSE, "The matched_markets object is not of type matched_market")
+  cat("\n")
+  
+  stopif(is.null(matched_markets$SuggestedTestControlSplits), TRUE, "The matched_markets object does not contain suggested pairs. Try re-running with the right settings")
+  cat("\n")
+  
+  if (min(matched_markets$SuggestedTestControlSplits$percent_of_volume)>=percent_cutoff){
+    percent_cutoff <- min(matched_markets$SuggestedTestControlSplits$percent_of_volume)
+  }
+  
+  d <- matched_markets$SuggestedTestControlSplits %>%
+    dplyr::filter(percent_of_volume<=percent_cutoff)
+  
+  t <- d$test_market
+  c <- d$control_market
+  
+  ### Roll up the data
+  if (synthetic==FALSE){
+     ru <- dplyr::mutate(matched_markets$Data, 
+                        TestCell=case_when(id_var %in% t ~ "TEST", 
+                                           id_var %in% c ~ "CONTROL",
+                                         TRUE ~ "DELETE")) %>%
+       dplyr::filter(!TestCell=="DELETE") %>%
+       dplyr::group_by(TestCell, date_var) %>%
+       dplyr::summarise(match_var=sum(match_var)) %>%
+       dplyr::ungroup()
+  } else {
+    ru <- dplyr::mutate(matched_markets$Data, 
+                        TestCell=case_when(id_var %in% t ~ "TEST",
+                                           id_var %in% c ~ id_var,
+                                           TRUE ~ "DELETE")) %>%
+      dplyr::filter(!TestCell=="DELETE") %>%
+      dplyr::group_by(TestCell, date_var) %>%
+      dplyr::summarise(match_var=sum(match_var)) %>%
+      dplyr::ungroup()
+  }
+  
+  s <- as.character(max(matched_markets$BestMatches$MatchingStartDate))
+  e <- as.character(min(matched_markets$BestMatches$MatchingEndDate))
+  
+  ## Generate the best matches object
+  mm <- best_matches(data=ru,
+                     suggest_market_splits = FALSE,
+                     dtw_emphasis = 0,
+                     matches=NULL,
+                     matching_variable = "match_var", 
+                     date_variable = "date_var", 
+                     id_variable = "TestCell", 
+                     start_match_period = s, 
+                     end_match_period = e)
+  
+  ## Return the results
+  cat("The market ID variable has been renamed to TestCell")
+  cat("\n")
+  cat("\n")
+  cat("The aggregated test cell market will be called TEST)")
+  cat("\n")
+  cat("\n")
+  return(mm)
+}

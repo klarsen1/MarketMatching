@@ -2,6 +2,7 @@
 
 export(best_matches)
 export(inference)
+export(roll_up_optimal_pairs)
 export(test_fake_lift)
 import(CausalImpact)
 import(dplyr)

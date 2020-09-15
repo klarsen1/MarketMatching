@@ -80,7 +80,7 @@ For more details on the theory behind dynamic time warping and causal inference 
 
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather,
+mm <- MarketMatching::best_matches(data=weather,
                    id_variable="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
@@ -154,7 +154,7 @@ In this example, we're calculating power (probability of a causal impact) at var
 
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather,
+mm <- MarketMatching::best_matches(data=weather,
                    id_variable="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
@@ -184,14 +184,16 @@ power$ResultsGraph
 
 ## Getting optimized market split (test/control) recommendations
 This example shows how to get test/control market pair suggestions from the distances.
-The package stratifies the markets by size (sum of Y) and the creates pairs based on the correlation of logged values. To invoke this markets_to_matched must be NULL.
+The package stratifies the markets by size (sum of Y) and the creates pairs based on the correlation of logged values. To invoke this markets_to_matched must be NULL. 
+
+Once the optimized pairs have been generated they are passed to the pseudo power function for evaluation. The `synthetic` parameter in the roll_up_optimal_pairs function determines if the control markets will be aggregated (equal weights in `bsts` and `CausalImpact`) or if they'll be left as individual markets and get separate weighths (synthetic control).
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 ##-----------------------------------------------------------------------
 ## Find all matches for each airport (market) time series. 
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather,
+mm <- MarketMatching::best_matches(data=weather,
                    id_variable="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
@@ -206,6 +208,20 @@ mm <- best_matches(data=weather,
 ## The file is sorted from the strongest market pair to the weakest pair.
 ##-----------------------------------------------------------------------
 head(mm$SuggestedTestControlSplits)
+
+##-----------------------------------------------------------------------
+## Pass the results to test_fake_lift to get pseudo power curves for the splits
+## Not a meaningful example for this data. Just to illustrate.
+##-----------------------------------------------------------------------
+rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
+                                synthetic=FALSE)
+
+power <- MarketMatching::test_fake_lift(matched_markets = rollup, 
+                        test_market = "TEST",
+                        end_fake_post_period = "2015-10-01",
+                        lift_pattern_type = "constant",
+                        steps=20, 
+                        max_fake_lift = 0.1)
 ```
 # How Does Dynamic Time Warping Work?
 Let's say we have two time series denoted by $X=(x_1, \ldots, x_n)$ and $Z=(z_1, \ldots, z_m)$, where $X$ is the test market (also called the *reference index*) and $Z$ is the control market (also called the *query index*). Note that, although $m$ and $n$ do not need to be equal, `MarketMatching` forces $m=n$. We'll denote the common length by $T$.

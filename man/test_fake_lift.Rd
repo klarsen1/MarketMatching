@@ -34,7 +34,7 @@ This parameter will be overwritten if you're using the bsts_modelargs parameter}
 
 \item{nseasons}{Seasonality for the bsts model -- e.g., 52 for weekly seasonality}
 
-\item{max_fake_lift}{The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10% and the min lift is -10%
+\item{max_fake_lift}{The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10 percent and the min lift is -10 percent
 Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified}
 
 \item{steps}{The number of steps used to calculate the power curve (default is 10)}
