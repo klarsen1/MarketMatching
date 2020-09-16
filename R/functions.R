@@ -1076,6 +1076,7 @@ roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthe
   
   s <- NULL
   e <- NULL
+  mm <- NULL
   
   ###  check out the matched markets object
   stopif(is.null(matched_markets), TRUE, "The matched_markets object is null")
@@ -1122,7 +1123,7 @@ roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthe
   e <- as.character(min(matched_markets$BestMatches$MatchingEndDate))
   
   ## Generate the best matches object
-  mm <- best_matches(data=ru,
+  mm <- MarketMatching::best_matches(data=ru,
                      suggest_market_splits = FALSE,
                      dtw_emphasis = 0,
                      matches=NULL,
