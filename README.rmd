@@ -9,7 +9,7 @@ If you ever spent time in the field of marketing analytics, chances are that you
 
 Intervention analyses require more judgement than evaluation of randomized test/control studies. When analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:
 
-1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period").
+1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period"). If the intervention has not happened, check the power of the test/control design.
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period"), while factoring in differences between the markets prior to the event.
 
 The purpose of this document is to describe a robust approach to intervention analysis based on two key `R` packages: the `CausalImpact` package written by Kay Brodersen at Google and the `dtw` package available in CRAN. In addition, we will introduce an `R` package called `MarketMatching` which implements a simple intervention analysis workflow based on these two packages.
@@ -27,6 +27,8 @@ For the intervention analysis the `CausalImpact` package provides an approach th
 We can summarize this workflow as follows:
 
 1. Pre-screening step: find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. Note that this step merely creates a list of candidates markets; the final markets used for the post-event inference will be decided in the next step. 
+
+Note: If you don't have a set of test markets to match, the `MarketMatching` can provide suggested test/control market pairs using the `suggest_market_splits`option in the `best_matches()` function. Also, the `test_fake_lift()` function provides pseudo prospective power analysis if you're using the `MarketMatching` package to create your test design (i.e., not just doing the post inference).
 
 2. Inference step: fit a Bayesian structural time series model that utilizes the control markets identified in step 1 as predictors. Based on this model, create a synthetic control series by producing a counterfactual prediction for the post period assuming that the event did not take place. We can then calculate the difference between the synthetic control and the test market for the post-intervention period – which is the estimated impact of the event – and compare to the posterior interval to gauge uncertainty. 
 
@@ -71,7 +73,7 @@ Hence, the package does *not* provide any new core functionality but it simplifi
 library(MarketMatching)
 ```
 
-# Example
+# Examples
 The dataset supplied with the package has daily temperature readings for 20 areas (airports) for 2014. The dataset is a stacked time series (panel data) where each row represents a unique combination of date and area. It has three columns: area, date, and the average temperature reading for the day.
 
 This is *not* the most appropriate dataset to demonstrate intervention inference, as humans cannot affect the weather in the short term (long term impact is a different blog post). We'll merely use the data to demonstrate the features.
@@ -206,6 +208,49 @@ power <- MarketMatching::prospective_power(matched_markets = mm,
 Inspecting the power curve:
 ```{r, echo = TRUE, message=FALSE, eval=FALSE, fig.width=7, fig.height=5}
 power$ResultsGraph
+```
+
+# Getting optimized market pairs (test/control) recommendations
+This example shows how to get test/control market pair suggestions from the distances.
+The package stratifies the markets by size (sum of Y) and the creates pairs based on the correlation of logged values. To invoke this markets_to_matched must be NULL. 
+
+Once the optimized pairs have been generated they are passed to the pseudo power function for evaluation. The `synthetic` parameter in the roll_up_optimal_pairs function determines if the control markets will be aggregated (equal weights in `bsts` and `CausalImpact`) or if they'll be left as individual markets and get separate weighths (synthetic control).
+```{r, echo = TRUE, message=FALSE, eval=FALSE}
+##-----------------------------------------------------------------------
+## Find all matches for each airport (market) time series. 
+##-----------------------------------------------------------------------
+library(MarketMatching)
+data(weather, package="MarketMatching")
+mm <- MarketMatching::best_matches(data=weather,
+                   id_variable="Area",
+                   date_variable="Date",
+                   matching_variable="Mean_TemperatureF",
+                   suggest_market_splits=TRUE,
+                   parallel=FALSE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=0, # rely only on correlation
+                   start_match_period="2014-01-01",
+                   end_match_period="2014-10-01")
+##-----------------------------------------------------------------------
+## The file that contains the suggested test/control splits
+## The file is sorted from the strongest market pair to the weakest pair.
+##-----------------------------------------------------------------------
+head(mm$SuggestedTestControlSplits)
+
+##-----------------------------------------------------------------------
+## Pass the results to test_fake_lift to get pseudo power curves for the splits
+## Not a meaningful example for this data. Just to illustrate.
+## Note that the rollup() function will label the test markets "TEST"
+##-----------------------------------------------------------------------
+rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
+                                synthetic=FALSE)
+
+power <- MarketMatching::test_fake_lift(matched_markets = rollup, 
+                        test_market = "TEST",
+                        end_fake_post_period = "2015-10-01",
+                        lift_pattern_type = "constant",
+                        steps=20, 
+                        max_fake_lift = 0.1)
 ```
 
 # References

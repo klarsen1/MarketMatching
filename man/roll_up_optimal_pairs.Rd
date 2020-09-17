@@ -46,10 +46,20 @@ mm <- best_matches(data=weather,
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
                    
+##-----------------------------------------------------------------------
+## Roll up the pairs to generate test and control markets
+## Synthetic=FALSE means that the control markets will be aggregated 
+## -- i.e., equal weighhs in CausalImpact
+##-----------------------------------------------------------------------
+                   
 rollup <- roll_up_optimal_pairs(matched_markets=mm, 
-                                perc_cutoff=0.5, 
+                                perc_cutoff=1, 
                                 synthetic=FALSE)
                                 
+##-----------------------------------------------------------------------
+## Pseudo power analysis
+##-----------------------------------------------------------------------
+
 results <- test_fake_lift(matched_markets=rollup,
                      test_market="TEST",
                      lift_pattern_type="constant",

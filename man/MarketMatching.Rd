@@ -12,6 +12,10 @@ In fact, MarketMatching is simply a wrapper and worfflow for those two packages.
 MarketMatching does not provide any functionality that cannot be found in these packages 
 but simplifies the workflow of using dtw and CausalImpact together 
 and provides charts and data that are easy to manipulate.
+
+Note: If you don't have a set of test markets to match, the `MarketMatching` can provide suggested test/control market pairs using the `suggest_market_splits`option 
+in the `best_matches()` function. Also, the `test_fake_lift()` function provides pseudo prospective power analysis if you're using the `MarketMatching` 
+package to create your test design (i.e., not just doing the post inference).
 }
 \details{
 The MarketMatching package can be used to perform the following analyses:
@@ -27,11 +31,13 @@ CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015
 
 The MarketMatching has two separate functions to perform the tasks described above:
 
-- best_matches(): This function finds the best matching control markets for all markets in the input dataset.
+- best_matches(): This function finds the best matching control markets for all markets in the input dataset. If you don't know the test markets
+the funcrtion can also provide suggested optimized test/control pairs.
 
 - inference(): Given an object from best_matches(), this function analyzes the causal impact of an intervention.
 
-- prospective_power(): Given an object from best_matches(), this function calculates the probability of a causal impact for fake interventions.
+- test_fake_lift(): Calculate the probability of a causal impact for fake interventions (prospective pseudo power).
+
 For more details, check out the vignette: browseVignettes("MarketMatching")
 }
 \examples{
@@ -42,7 +48,7 @@ For more details, check out the vignette: browseVignettes("MarketMatching")
 ##-----------------------------------------------------------------------
 library(MarketMatching)
 data(weather, package="MarketMatching")
-mm <- best_matches(data=weather, 
+mm <- MarketMatching::best_matches(data=weather, 
                    id="Area",
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
@@ -82,11 +88,47 @@ power <- MarketMatching::prospective_power(matched_markets = mm,
                                      test_market = "CPH", 
                                      end_fake_post_period = "2015-10-01", 
                                      prior_level_sd = 0.002, 
-                                     steps=5,
+                                     steps=20,
                                      max_fake_lift=0.05)
 
 ## Plot the curve
 power$ResultsGraph
+
+##-----------------------------------------------------------------------
+## Generate suggested test/control pairs
+##-----------------------------------------------------------------------
+
+data(weather, package="MarketMatching")
+mm <- MarketMatching::best_matches(data=weather,
+                                  id_variable="Area",
+                                  date_variable="Date",
+                                  matching_variable="Mean_TemperatureF",
+                                  suggest_market_splits=TRUE,
+                                  parallel=FALSE,
+                                  warping_limit=1, # warping limit=1
+                                  dtw_emphasis=0, # rely only on correlation
+                                  start_match_period="2014-01-01",
+                                  end_match_period="2014-10-01")
+
+##-----------------------------------------------------------------------
+## The file that contains the suggested test/control splits
+## The file is sorted from the strongest market pair to the weakest pair.
+##-----------------------------------------------------------------------
+head(mm$SuggestedTestControlSplits)
+
+##-----------------------------------------------------------------------
+## Pass the results to test_fake_lift to get pseudo power curves for the splits
+## Not a meaningful example for this data. Just to illustrate.
+## Note that the rollup() function will label the test markets "TEST"
+##-----------------------------------------------------------------------
+rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
+                                               synthetic=FALSE)
+
+power <- MarketMatching::test_fake_lift(matched_markets = rollup, 
+                                       test_market = "TEST",
+                                       end_fake_post_period = "2015-10-01",
+                                       lift_pattern_type = "constant",
+                                       max_fake_lift = 0.1)
 }
 \author{
 Kim Larsen (kblarsen4 at gmail.com)

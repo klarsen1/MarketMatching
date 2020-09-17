@@ -75,7 +75,14 @@ We can summarize this workflow as follows:
     list of candidates markets; the final markets used for the
     post-event inference will be decided in the next step.
 
-2.  Inference step: fit a Bayesian structural time series model that
+Note: If you don’t have a set of test markets to match, the
+`MarketMatching` can provide suggested test/control market pairs using
+the `suggest_market_splits`option in the `best_matches()` function.
+Also, the `test_fake_lift()` function provides pseudo prospective power
+analysis if you’re using the `MarketMatching` package to create your
+test design (i.e., not just doing the post inference).
+
+1.  Inference step: fit a Bayesian structural time series model that
     utilizes the control markets identified in step 1 as predictors.
     Based on this model, create a synthetic control series by producing
     a counterfactual prediction for the post period assuming that the
@@ -167,8 +174,8 @@ How to Install
 library(MarketMatching)
 ```
 
-Example
-=======
+Examples
+========
 
 The dataset supplied with the package has daily temperature readings for
 20 areas (airports) for 2014. The dataset is a stacked time series
@@ -339,6 +346,59 @@ Inspecting the power curve:
 
 ``` r
 power$ResultsGraph
+```
+
+Getting optimized market pairs (test/control) recommendations
+=============================================================
+
+This example shows how to get test/control market pair suggestions from
+the distances. The package stratifies the markets by size (sum of Y) and
+the creates pairs based on the correlation of logged values. To invoke
+this markets\_to\_matched must be NULL.
+
+Once the optimized pairs have been generated they are passed to the
+pseudo power function for evaluation. The `synthetic` parameter in the
+roll\_up\_optimal\_pairs function determines if the control markets will
+be aggregated (equal weights in `bsts` and `CausalImpact`) or if they’ll
+be left as individual markets and get separate weighths (synthetic
+control).
+
+``` r
+##-----------------------------------------------------------------------
+## Find all matches for each airport (market) time series. 
+##-----------------------------------------------------------------------
+library(MarketMatching)
+data(weather, package="MarketMatching")
+mm <- MarketMatching::best_matches(data=weather,
+                   id_variable="Area",
+                   date_variable="Date",
+                   matching_variable="Mean_TemperatureF",
+                   suggest_market_splits=TRUE,
+                   parallel=FALSE,
+                   warping_limit=1, # warping limit=1
+                   dtw_emphasis=0, # rely only on correlation
+                   start_match_period="2014-01-01",
+                   end_match_period="2014-10-01")
+##-----------------------------------------------------------------------
+## The file that contains the suggested test/control splits
+## The file is sorted from the strongest market pair to the weakest pair.
+##-----------------------------------------------------------------------
+head(mm$SuggestedTestControlSplits)
+
+##-----------------------------------------------------------------------
+## Pass the results to test_fake_lift to get pseudo power curves for the splits
+## Not a meaningful example for this data. Just to illustrate.
+## Note that the rollup() function will label the test markets "TEST"
+##-----------------------------------------------------------------------
+rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
+                                synthetic=FALSE)
+
+power <- MarketMatching::test_fake_lift(matched_markets = rollup, 
+                        test_market = "TEST",
+                        end_fake_post_period = "2015-10-01",
+                        lift_pattern_type = "constant",
+                        steps=20, 
+                        max_fake_lift = 0.1)
 ```
 
 References

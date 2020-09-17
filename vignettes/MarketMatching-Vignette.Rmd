@@ -34,6 +34,8 @@ We can summarize this workflow as follows:
 
 1. Pre-screening step: find the best control markets for each market in the dataset using dynamic time warping. The user can define how many matches should be retained. Note that this step merely creates a list of candidates markets; the final markets used for the post-event inference will be decided in the next step. 
 
+Note: If you don't have a set of test markets to match, the `MarketMatching` can provide suggested test/control market pairs using the `suggest_market_splits`option in the `best_matches()` function. Also, the `test_fake_lift()` function provides pseudo prospective power analysis if you're using the `MarketMatching` package to create your test design (i.e., not just doing the post inference). See examples below.
+
 2. Inference step: fit a Bayesian structural time series model that utilizes the control markets identified in step 1 as predictors. Based on this model, create a synthetic control series by producing a counterfactual prediction for the post period assuming that the event did not take place. We can then calculate the difference between the synthetic control and the test market for the post-intervention period – which is the estimated impact of the event – and compare to the posterior interval to gauge uncertainty. 
 
 ### Notes on the Workflow
@@ -182,7 +184,7 @@ Inspecting the power curve:
 power$ResultsGraph
 ```
 
-## Getting optimized market split (test/control) recommendations
+## Getting optimized market pairs (test/control) recommendations
 This example shows how to get test/control market pair suggestions from the distances.
 The package stratifies the markets by size (sum of Y) and the creates pairs based on the correlation of logged values. To invoke this markets_to_matched must be NULL. 
 
@@ -212,6 +214,7 @@ head(mm$SuggestedTestControlSplits)
 ##-----------------------------------------------------------------------
 ## Pass the results to test_fake_lift to get pseudo power curves for the splits
 ## Not a meaningful example for this data. Just to illustrate.
+## Note that the rollup() function will label the test markets "TEST"
 ##-----------------------------------------------------------------------
 rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
                                 synthetic=FALSE)
