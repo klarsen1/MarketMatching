@@ -20,6 +20,7 @@ logplus <- function(x){
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
 #' @importFrom stats cor var na.omit
+#' @importFrom tidyr replace_na
 
 calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limit, matches, dtw_emphasis){
   ## Nulling to avoid CRAN notes
@@ -110,7 +111,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w) %>%
-    dplyr::mutate(Correlation_of_logs=if_else(is.na(Correlation_of_logs), 0, Correlation_of_logs))
+    tidyr::replace_na(list(Correlation_of_logs=0))
   
   if (dtw_emphasis==0){
     distances$RelativeDistance <- NA
