@@ -57,7 +57,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     rawdist <- 0
     dist <- 0
     # If insufficient data or no variance
-    if ((stats::var(test)==0 | length(test)<=2*warping_limit+1)){
+    if ((stats::var(test)==0 | length(test)<=2*warping_limit+1) | sum(abs(test))==0){
       isValidTest <- FALSE
       messages <- messages + 1
     }
@@ -65,7 +65,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
       sum_test <- abs(sum(test))
       sum_cntl <- abs(sum(ref))
-      if (dtw_emphasis>0){
+      if (dtw_emphasis>0 & sum_test>0){
         rawdist <- dtw(test, ref, window.type=sakoeChibaWindow, window.size=warping_limit)$distance 
         dist <- rawdist / sum_test
       } else{
