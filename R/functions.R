@@ -78,7 +78,11 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "SUMTEST"] <- sum_test
       distances[row, "SUMCNTL"] <- sum_cntl
       distances[row, "RAWDIST"] <- rawdist
-      distances[row, "Correlation_of_logs"] <- cor(logplus(test), logplus(ref))
+      if (max(ref)>0 & max(test)>0){
+         distances[row, "Correlation_of_logs"] <- cor(logplus(test), logplus(ref))
+      } else{
+         distances[row, "Correlation_of_logs"] <- NA
+      }
     } else{
       if (ThisMarket != ThatMarket){
          messages <- messages + 1
