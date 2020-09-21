@@ -32,6 +32,10 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   corr_rank <- NULL
   combined_rank <- NULL
   messages <- NULL
+  
+  if (dtw_emphasis==0){
+    warping_limit <- 1
+  }
 
   row <- 1
   ThisMarket <- markets_to_be_matched[i]
@@ -50,7 +54,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     dates <- mkts[[3]]
     sum_test <- NA
     sum_cntl <- NA
-    rawdist <- NA
+    rawdist <- 0
+    dist <- 0
     # If insufficient data or no variance
     if ((stats::var(test)==0 | length(test)<=2*warping_limit+1)){
       isValidTest <- FALSE
