@@ -125,6 +125,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   if (dtw_emphasis==0){
     distances$RelativeDistance <- NA
   }
+  print(paste0("distance computer for ", ThisMarket))
   
   return(distances)
 }
