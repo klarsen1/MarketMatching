@@ -348,10 +348,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   stopif(nrow(data)>0, FALSE, "ERROR: no data left after filter for dates")
 
   ## get a vector of all markets that matches are wanted for. Check to ensure markets_to_be_matched exists in the data.
-  segmentation <- FALSE
   if(is.null(markets_to_be_matched)){
     markets_to_be_matched <- unique(data$id_var)
-    segmentation <- TRUE
   }else{
     markets_to_be_matched <- unique(markets_to_be_matched)
     for (k in 1:length(markets_to_be_matched)){
@@ -376,7 +374,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     stopImplicitCluster()
   }
   
-  if (segmentation==TRUE){
+  if (suggest_market_splits==TRUE){
     sizes <- shortest_distances
     sizes$market <- sizes[[id_variable]]
     markets <- length(unique(sizes$market))
@@ -425,6 +423,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
                       percent_of_volume=cumsum(v)/sum(v)) %>%
        dplyr::select(-v)
     }
+  } else{
+    suggested_split <- NULL
   }
   
   ### Return the results
