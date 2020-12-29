@@ -120,7 +120,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w) %>%
-    tidyr::replace_na(list(Correlation_of_logs=0))
+    tidyr::replace_na(list(Correlation_of_logs=0)) %>%
+    dplyr::mutate(NORMDIST=2*RAWDIST/(SUMTEST+SUMCNTL))
   
   if (dtw_emphasis==0 & nrow(distances)>0){
     distances$RelativeDistance <- NA
@@ -219,6 +220,8 @@ dw <- function(y, yhat){
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
+#' @param log_for_splitting This parameter determines if optimal splitting is based on correlations of the raw 
+#' matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE
 #' @import foreach
 #' @importFrom parallel detectCores
 #' @import CausalImpact
@@ -271,7 +274,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 #' \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
 
-best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=20){
+best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=20, log_for_splitting=TRUE){
 
   ## Nulling to avoid angry notes
   match_var <- NULL
@@ -399,19 +402,28 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       bin <- dplyr::pull(sizes[[i]], market)
       tdf <- shortest_distances
       tdf$test_market <- tdf[[id_variable]]
+      if (log_for_splitting==TRUE){
+         tdf$C <- tdf$Correlation_of_logs
+      } else{
+        tdf$C <- tdf$Correlation
+      }
       tdf <- dplyr::filter(tdf, test_market %in% bin & BestControl %in%  bin) %>%
-        dplyr::arrange(-Correlation_of_logs) %>%
+        dplyr::arrange(-C) %>%
         dplyr::mutate(
                control_market=BestControl, 
                Segment=i)
       rowsleft <- nrow(tdf)
       while(rowsleft>1){
-        optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "SUMTEST", "SUMCNTL")]
+        if (log_for_splitting==TRUE){
+           optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "SUMTEST", "SUMCNTL")]
+        } else{
+          optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation", "SUMTEST", "SUMCNTL")]
+        }
         test <- tdf[1,"test_market"]
         cntl <- tdf[1,"control_market"]
         tdf <- dplyr::filter(tdf, !(test_market %in% c(test, cntl)))
         tdf <- dplyr::filter(tdf, !(control_market %in% c(test, cntl))) %>%
-          dplyr::arrange(-Correlation_of_logs)
+          dplyr::arrange(-C)
         rowsleft <- nrow(tdf)
         j <- j+1
       }  
@@ -1142,6 +1154,9 @@ roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthe
                      id_variable = "TestCell", 
                      start_match_period = s, 
                      end_match_period = e)
+  
+  mm$DateVariable <- matched_markets$DateVariable
+  mm$MatchingMetric <- matched_markets$MatchingMetric
   
   ## Return the results
   cat("The market ID variable has been renamed to TestCell")

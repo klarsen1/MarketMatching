@@ -54,6 +54,9 @@ For this option to be invoked, markets_to_be_matched must be NULL (i.e., you mus
 \item{splitbins}{Number of size-based bins used to stratify when splitting markets into test and control.
 Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
 Less bins means more emphasis on correlation.}
+
+\item{log_for_splitting}{This parameter determines if optimal splitting is based on correlations of the raw 
+matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the
