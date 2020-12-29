@@ -414,11 +414,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
                Segment=i)
       rowsleft <- nrow(tdf)
       while(rowsleft>1){
-        if (log_for_splitting==TRUE){
-           optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "SUMTEST", "SUMCNTL")]
-        } else{
-          optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation", "SUMTEST", "SUMCNTL")]
-        }
+        optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "Correlation", "SUMTEST", "SUMCNTL", "C")]
         test <- tdf[1,"test_market"]
         cntl <- tdf[1,"control_market"]
         tdf <- dplyr::filter(tdf, !(test_market %in% c(test, cntl)))
@@ -429,11 +425,11 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       }  
      suggested_split <- dplyr::bind_rows(optimal_list) %>%
         ungroup() %>%
-        dplyr::arrange(Segment, -Correlation_of_logs) %>%
+        dplyr::arrange(Segment, -C) %>%
         dplyr::mutate(PairRank=row_number()) %>%
         dplyr::mutate(v=SUMTEST+SUMCNTL, 
                       percent_of_volume=cumsum(v)/sum(v)) %>%
-       dplyr::select(-v)
+       dplyr::select(-v, -C)
     }
   } else{
     suggested_split <- NULL
