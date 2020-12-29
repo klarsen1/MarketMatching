@@ -213,7 +213,7 @@ dw <- function(y, yhat){
 #' For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
 #' @param splitbins Number of size-based bins used to stratify when splitting markets into test and control.
 #' Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
-#' Less bins means more emphasis on correlation.
+#' Less bins means more emphasis on correlation. Default is 10.
 #' @param end_match_period the end date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)
@@ -258,7 +258,7 @@ dw <- function(y, yhat){
 #'              matching_variable=NULL,
 #'              parallel=TRUE,
 #'              warping_limit=1,
-#'              splitbins=20,
+#'              splitbins=10,
 #'              start_match_period=NULL,
 #'              end_match_period=NULL,
 #'              matches=5,
@@ -274,7 +274,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 #' \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
 
-best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=20, log_for_splitting=FALSE){
+best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=10, log_for_splitting=FALSE){
 
   ## Nulling to avoid angry notes
   match_var <- NULL
