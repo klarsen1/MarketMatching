@@ -221,7 +221,7 @@ dw <- function(y, yhat){
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
 #' An emphasis of 0.5 would yield equal weighting.
 #' @param log_for_splitting This parameter determines if optimal splitting is based on correlations of the raw 
-#' matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE
+#' matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE. Default is FALSE.
 #' @import foreach
 #' @importFrom parallel detectCores
 #' @import CausalImpact
@@ -274,7 +274,7 @@ dw <- function(y, yhat){
 #' \item{\code{DateVariable}}{The name of the date variable}
 #' \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
 
-best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=20, log_for_splitting=TRUE){
+best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=20, log_for_splitting=FALSE){
 
   ## Nulling to avoid angry notes
   match_var <- NULL
