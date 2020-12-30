@@ -403,8 +403,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       dplyr::arrange(-SUMTEST) %>%
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
-      dplyr::select(market, rank) %>%
-      dplyr::group_split(rank)
+      dplyr::select(market, bin) %>%
+      dplyr::group_split(bin)
     optimal_list <- list()
     j <- 1
     for (i in 1:length(sizes)){
