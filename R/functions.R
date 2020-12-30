@@ -472,8 +472,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
      dplyr::group_by(Segment) %>%
      dplyr::mutate(markets=n()*2) %>%
      dplyr::ungroup() %>%
-     dplyr::mutate(Correlation_of_logs=dplyr::if_else(Correlation_of_logs==-1000000000, NA, Correlation_of_logs),
-                   Correlation=dplyr::if_else(Correlation==-1000000000, NA, Correlation))
+     dplyr::mutate(Correlation_of_logs=dplyr::na_if(Correlation_of_logs, -1000000000),
+                   Correlation=dplyr::na_if(Correlation, -1000000000))
      
    Sizes <- dplyr::select(Sizes, market, bin, Volume) %>%
      dplyr::group_by(bin) %>%
