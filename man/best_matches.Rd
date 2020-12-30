@@ -12,7 +12,7 @@ best_matches(data=NULL,
              matching_variable=NULL,
              parallel=TRUE,
              warping_limit=1,
-             splitbins=20,
+             splitbins=10,
              start_match_period=NULL,
              end_match_period=NULL,
              matches=5,
@@ -53,10 +53,10 @@ For this option to be invoked, markets_to_be_matched must be NULL (i.e., you mus
 
 \item{splitbins}{Number of size-based bins used to stratify when splitting markets into test and control.
 Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
-Less bins means more emphasis on correlation.}
+Less bins means more emphasis on correlation. Default is 10.}
 
 \item{log_for_splitting}{This parameter determines if optimal splitting is based on correlations of the raw 
-matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE}
+matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE. Default is FALSE.}
 }
 \value{
 Returns an object of type \code{market_matching}. The object has the
