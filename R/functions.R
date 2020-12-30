@@ -448,7 +448,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
    
    suggested_split <- dplyr::bind_rows(optimal_list) %>%
         dplyr::select(-SUMTEST, -SUMCNTL) %>%
-        ungroup() %>%
+        dplyr::ungroup() %>%
         dplyr::left_join(dplyr::select(Sizes, Volume, test_market), by="test_market") %>%
         dplyr::rename(SUMTEST=Volume) %>%
         dplyr::left_join(dplyr::select(Sizes, Volume, control_market), by="control_market") %>%
@@ -457,8 +457,11 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         dplyr::mutate(PairRank=row_number()) %>%
         dplyr::mutate(Volume=SUMTEST+SUMCNTL, 
                       percent_of_volume=cumsum(Volume)/sum(Volume)) %>%
-       dplyr::select(-C)
-   
+       dplyr::select(-C) %>%
+     dplyr::group_by(Segment) %>%
+     dplyr::mutate(markets=n()*2) %>%
+     dplyr::ungroup()
+     
    Sizes <- dplyr::select(Sizes, market, bin, Volume) %>%
      dplyr::group_by(bin) %>%
      dplyr::mutate(n=n()) %>%
