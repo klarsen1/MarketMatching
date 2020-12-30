@@ -444,7 +444,6 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         j <- j+1
       }
     }
-    
    Sizes <- dplyr::bind_rows(sizes)
    
    suggested_split <- dplyr::bind_rows(optimal_list) %>%
