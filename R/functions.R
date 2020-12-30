@@ -88,13 +88,13 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
          messages <- messages + 1
       }
       distances[row, "Skip"] <- TRUE
-      distances[row, "RelativeDistance"] <- NA
-      distances[row, "Correlation"] <- NA
-      distances[row, "Length"] <- NA
-      distances[row, "SUMTEST"] <- NA
-      distances[row, "SUMCNTL"] <- NA
+      distances[row, "RelativeDistance"] <- -1000000000
+      distances[row, "Correlation"] <- -1000000000
+      distances[row, "Length"] <- 0
+      distances[row, "SUMTEST"] <- 0
+      distances[row, "SUMCNTL"] <- 0
       distances[row, "RAWDIST"] <- NA
-      distances[row, "Correlation_of_logs"] <- NA
+      distances[row, "Correlation_of_logs"] <- -1000000000
       
     }
     row <- row + 1
@@ -114,8 +114,8 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   # Filter down to only the top matches
   distances <- distances %>%
     #dplyr::filter(distances, Skip==FALSE) %>%
-    tidyr::replace_na(list(Correlation_of_logs=-1, Correlation=-1, RelativeDistance=-1000000000)) %>%
-    tidyr::replace_na(list(SUMTEST=0, SUMCNTL=0)) %>%
+    #tidyr::replace_na(list(Correlation_of_logs=-1, Correlation=-1, RelativeDistance=-1000000000)) %>%
+    #tidyr::replace_na(list(SUMTEST=0, SUMCNTL=0)) %>%
     dplyr::mutate(distances, dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
     dplyr::mutate(combined_rank=w*dist_rank+(1-w)*corr_rank) %>%
