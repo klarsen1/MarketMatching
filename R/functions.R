@@ -400,12 +400,14 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
       dplyr::group_by(market) %>%
-      dplyr::summarise(SUMTEST=max(SUMTEST)) %>%
+      dplyr::summarise(Volume=max(SUMTEST)) %>%
       dplyr::ungroup() %>%
-      dplyr::arrange(-SUMTEST) %>%
+      dplyr::arrange(-Volume) %>%
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
       dplyr::select(market, bin) %>%
+      ddlyr::mutate(test_market=market, 
+                    control_market=market) %>%
       dplyr::group_split(bin)
     optimal_list <- list()
     j <- 1
@@ -435,15 +437,23 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         j <- j+1
       }
     }
-     suggested_split <- dplyr::bind_rows(optimal_list) %>%
+    
+   Sizes <- dplyr::bind_rows(sizes)
+   
+   suggested_split <- dplyr::bind_rows(optimal_list) %>%
+        dplyr::select(-SUMTEST, -SUMCNTL) %>%
         ungroup() %>%
+        dplyr::left_join(dplyr::select(Sizes, Volume, test_market), by="test_market") %>%
+        dplyr::rename(SUMTEST=Volume) %>%
+        dplyr::left_join(dplyr::select(Sizes, Volume, control_market), by="control_market") %>%
+        dplyr::rename(SUMCNTL=Volume) %>%
         dplyr::arrange(Segment, -C) %>%
         dplyr::mutate(PairRank=row_number()) %>%
-        dplyr::mutate(v=SUMTEST+SUMCNTL, 
-                      percent_of_volume=cumsum(v)/sum(v)) %>%
-       dplyr::select(-v, -C)
-     
-     Sizes <- dplyr::bind_rows(sizes)
+        dplyr::mutate(Volume=SUMTEST+SUMCNTL, 
+                      percent_of_volume=cumsum(Volume)/sum(Volume)) %>%
+       dplyr::select(-C)
+   
+   Sizes <- dplyr::select(Sizes, market, Volume)
     
   } else{
     suggested_split <- NULL
