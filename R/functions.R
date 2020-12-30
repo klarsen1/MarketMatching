@@ -399,7 +399,9 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     bin_size <- floor(markets/bins)
     
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
-      dplyr::distinct(market, .keep_all=TRUE) %>%
+      dplyr::group_by(market) %>%
+      dplyr::summarise(SUMTEST=max(SUMTEST)) %>%
+      dplyr::ungroup() %>%
       dplyr::arrange(-SUMTEST) %>%
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
