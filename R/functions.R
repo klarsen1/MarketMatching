@@ -96,7 +96,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
          distances[row, "Length"] <- 0
          distances[row, "SUMTEST"] <- 0
          distances[row, "SUMCNTL"] <- 0
-         distances[row, "RAWDIST"] <- 0
+         distances[row, "RAWDIST"] <- -1000000000
          distances[row, "Correlation_of_logs"] <- -1000000000
          row <- row + 1
       }
@@ -125,7 +125,9 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w) %>%
-    dplyr::mutate(NORMDIST=dplyr::if_else(SUMTEST+SUMCNTL>0, 2*RAWDIST/(SUMTEST+SUMCNTL), -1000000000))
+    dplyr::mutate(NORMDIST=dplyr::if_else(SUMTEST+SUMCNTL>0 & RAWDIST != -1000000000, 2*RAWDIST/(SUMTEST+SUMCNTL), -1000000000)) %>%
+    dplyr::mutate(NORMDIST=dplyr::na_if(NORMDIST, -1000000000),  
+                  RAWDIST=dplyr::na_if(RAWDIST, -1000000000))
   
   if (dtw_emphasis==0 & nrow(distances)>0){
     distances$RelativeDistance <- NA
