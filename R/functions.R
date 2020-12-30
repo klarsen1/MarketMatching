@@ -412,7 +412,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       dplyr::arrange(-Volume) %>%
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
-      dplyr::select(market, bin) %>%
+      dplyr::select(market, bin, Volume) %>%
       dplyr::mutate(test_market=market, 
                     control_market=market) %>%
       dplyr::group_split(bin)
