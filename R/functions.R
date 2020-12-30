@@ -398,6 +398,13 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     
     bin_size <- floor(markets/bins)
     
+    if (bin_size %% 2 != 0){
+      bin_size <- bin_size-1
+      if (bin_size<1){
+        bin_size <- 1
+      }
+    }
+    
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
       dplyr::group_by(market) %>%
       dplyr::summarise(Volume=max(SUMTEST)) %>%
@@ -453,7 +460,10 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
                       percent_of_volume=cumsum(Volume)/sum(Volume)) %>%
        dplyr::select(-C)
    
-   Sizes <- dplyr::select(Sizes, market, Volume)
+   Sizes <- dplyr::select(Sizes, market, bin, Volume) %>%
+     dplyr::group_by(bin) %>%
+     dplyr::mutate(n=n()) %>%
+     dplyr::ungroup()
     
   } else{
     suggested_split <- NULL
