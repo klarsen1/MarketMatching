@@ -422,7 +422,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
           dplyr::arrange(-C)
         rowsleft <- nrow(tdf)
         j <- j+1
-      }  
+      }
+    }
      suggested_split <- dplyr::bind_rows(optimal_list) %>%
         ungroup() %>%
         dplyr::arrange(Segment, -C) %>%
@@ -430,7 +431,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         dplyr::mutate(v=SUMTEST+SUMCNTL, 
                       percent_of_volume=cumsum(v)/sum(v)) %>%
        dplyr::select(-v, -C)
-    }
+    
   } else{
     suggested_split <- NULL
   }
