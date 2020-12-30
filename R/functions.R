@@ -39,8 +39,9 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
 
   row <- 1
   ThisMarket <- markets_to_be_matched[i]
-  distances <- data.frame(matrix(nrow=length(data$id_var)-1, ncol=9))
-  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "SUMTEST", "SUMCNTL", "RAWDIST", "Correlation_of_logs")
+  distances <- data.frame(matrix(nrow=length(data$id_var)-1, ncol=10))
+  names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "SUMTEST", "SUMCNTL", "RAWDIST", "Correlation_of_logs", "populated")
+  distances[ ,"populated"] <- 0
   messages <- 0
   # For each market
   for (j in 1:length(unique(data$id_var))){
@@ -72,6 +73,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
         rawdist <- 0
       }
       distances[row, "Correlation"] <- cor(test, ref)
+      distances[row, "populated"] <- 1
       distances[row, "RelativeDistance"] <- dist
       distances[row, "Skip"] <- FALSE
       distances[row, "Length"] <- length(test)
@@ -83,20 +85,22 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       } else{
          distances[row, "Correlation_of_logs"] <- NA
       }
+      row <- row + 1
     } else{
       if (ThisMarket != ThatMarket){
          messages <- messages + 1
          distances[row, "Skip"] <- TRUE
          distances[row, "RelativeDistance"] <- -1000000000
+         distances[row, "populated"] <- 1
          distances[row, "Correlation"] <- -1000000000
          distances[row, "Length"] <- 0
          distances[row, "SUMTEST"] <- 0
          distances[row, "SUMCNTL"] <- 0
-         distances[row, "RAWDIST"] <- NA
+         distances[row, "RAWDIST"] <- 0
          distances[row, "Correlation_of_logs"] <- -1000000000
+         row <- row + 1
       }
     }
-    row <- row + 1
   }
   
   if(messages > 0){
@@ -111,19 +115,17 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   distances$MatchingEndDate <- max(data$date_var)
   
   # Filter down to only the top matches
-  distances <- distances %>%
-    #dplyr::filter(distances, Skip==FALSE) %>%
-    #tidyr::replace_na(list(Correlation_of_logs=-1, Correlation=-1, RelativeDistance=-1000000000)) %>%
-    #tidyr::replace_na(list(SUMTEST=0, SUMCNTL=0)) %>%
-    dplyr::mutate(distances, dist_rank=rank(RelativeDistance)) %>%
+  distances <- 
+    dplyr::filter(distances, populated==1) %>%
+    dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
     dplyr::mutate(combined_rank=w*dist_rank+(1-w)*corr_rank) %>%
     dplyr::arrange(combined_rank) %>%
-    dplyr::select(-dist_rank, -combined_rank, -corr_rank) %>%
+    dplyr::select(-dist_rank, -combined_rank, -corr_rank, -populated) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w) %>%
-    dplyr::mutate(NORMDIST=dplyr::if_else(is.na(RAWDIST), -1000000000, 2*RAWDIST/(SUMTEST+SUMCNTL)))
+    dplyr::mutate(NORMDIST=dplyr::if_else(SUMTEST+SUMCNTL>0, 2*RAWDIST/(SUMTEST+SUMCNTL), -1000000000))
   
   if (dtw_emphasis==0 & nrow(distances)>0){
     distances$RelativeDistance <- NA
