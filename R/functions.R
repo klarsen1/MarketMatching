@@ -400,12 +400,12 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
       dplyr::distinct(market, .keep_all=TRUE) %>%
+      ddplyr::arrange(-SUMTEST) %>%
       dplyr::mutate(
         #rank=rank(-SUMTEST, ties.method="random"), 
-        rank=floor((dplyr::row_number()-0.1)/bin_size)+1
-        DECILE=ntile(rank, bins)) %>%
-      dplyr::select(market, DECILE) %>%
-      dplyr::group_split(DECILE)
+        bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
+      dplyr::select(market, rank) %>%
+      dplyr::group_split(rank)
     optimal_list <- list()
     j <- 1
     for (i in 1:length(sizes)){
