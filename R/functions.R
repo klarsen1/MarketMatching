@@ -115,6 +115,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   distances <- distances %>%
     #dplyr::filter(distances, Skip==FALSE) %>%
     tidyr::replace_na(list(Correlation_of_logs=-1, Correlation=-1, RelativeDistance=-1000000000)) %>%
+    tidyr::replace_na(list(SUMTEST=0, SUMCNTL=0)) %>%
     dplyr::mutate(distances, dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
     dplyr::mutate(combined_rank=w*dist_rank+(1-w)*corr_rank) %>%
@@ -389,6 +390,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     }
     
     sizes <- shortest_distances
+    
     sizes$market <- sizes[[id_variable]]
     markets <- length(unique(sizes$market))
     maxbins <- floor(markets/2)
