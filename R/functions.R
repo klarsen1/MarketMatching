@@ -413,7 +413,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
                control_market=BestControl, 
                Segment=i)
       rowsleft <- nrow(tdf)
-      while(rowsleft>1){
+      while(rowsleft>0){
         optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "Correlation", "SUMTEST", "SUMCNTL", "C")]
         test <- tdf[1,"test_market"]
         cntl <- tdf[1,"control_market"]
