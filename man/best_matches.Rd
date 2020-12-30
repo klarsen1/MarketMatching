@@ -68,6 +68,7 @@ following elements:
 \item{\code{MatchingMetric}}{The name of the matching variable}
 \item{\code{DateVariable}}{The name of the date variable}
 \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
+\item{\code{Bins}}{Bins used for splitting}
 }
 \description{
 \code{best_matches} finds the best matching control markets for each market in the dataset
