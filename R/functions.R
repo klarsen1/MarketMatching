@@ -431,13 +431,16 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         dplyr::mutate(v=SUMTEST+SUMCNTL, 
                       percent_of_volume=cumsum(v)/sum(v)) %>%
        dplyr::select(-v, -C)
+     
+     Sizes <- dplyr::bind_rows(sizes)
     
   } else{
     suggested_split <- NULL
+    Sizes <- NULL
   }
   
   ### Return the results
-  object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable, SuggestedTestControlSplits=suggested_split)
+  object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable, SuggestedTestControlSplits=suggested_split, Sizes=Sizes)
   class(object) <- "matched_market"
   return (object)
 }
