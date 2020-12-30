@@ -281,6 +281,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   id_var <- NULL
   date_var <- NULL
   suggested_split <- NULL
+  Sizes <-NULL
   
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
