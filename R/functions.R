@@ -413,7 +413,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
       dplyr::select(market, bin) %>%
-      ddlyr::mutate(test_market=market, 
+      dplyr::mutate(test_market=market, 
                     control_market=market) %>%
       dplyr::group_split(bin)
     optimal_list <- list()
