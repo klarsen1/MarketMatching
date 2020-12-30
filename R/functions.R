@@ -390,11 +390,19 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       if (bins==0){bins <- 1}
     } else if (maxbins==0){
       bins <- 1
-    } 
+    } else if (splitbins>maxbins){
+      bins <- maxbins
+    } else if (splitbins==0){
+      bins <- 1
+    }
+    
+    bin_size <- floor(markets/bins)
+    
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
       dplyr::distinct(market, .keep_all=TRUE) %>%
       dplyr::mutate(
-        rank=rank(-SUMTEST, ties.method="random"), 
+        #rank=rank(-SUMTEST, ties.method="random"), 
+        rank=floor((dplyr::row_number()-0.1)/bin_size)+1
         DECILE=ntile(rank, bins)) %>%
       dplyr::select(market, DECILE) %>%
       dplyr::group_split(DECILE)
