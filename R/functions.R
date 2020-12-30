@@ -39,7 +39,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
 
   row <- 1
   ThisMarket <- markets_to_be_matched[i]
-  distances <- data.frame(matrix(nrow=length(data$id_var), ncol=9))
+  distances <- data.frame(matrix(nrow=length(data$id_var)-1, ncol=9))
   names(distances) <- c(id, "BestControl", "RelativeDistance", "Correlation", "Length", "SUMTEST", "SUMCNTL", "RAWDIST", "Correlation_of_logs")
   messages <- 0
   # For each market
@@ -86,16 +86,15 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     } else{
       if (ThisMarket != ThatMarket){
          messages <- messages + 1
+         distances[row, "Skip"] <- TRUE
+         distances[row, "RelativeDistance"] <- -1000000000
+         distances[row, "Correlation"] <- -1000000000
+         distances[row, "Length"] <- 0
+         distances[row, "SUMTEST"] <- 0
+         distances[row, "SUMCNTL"] <- 0
+         distances[row, "RAWDIST"] <- NA
+         distances[row, "Correlation_of_logs"] <- -1000000000
       }
-      distances[row, "Skip"] <- TRUE
-      distances[row, "RelativeDistance"] <- -1000000000
-      distances[row, "Correlation"] <- -1000000000
-      distances[row, "Length"] <- 0
-      distances[row, "SUMTEST"] <- 0
-      distances[row, "SUMCNTL"] <- 0
-      distances[row, "RAWDIST"] <- NA
-      distances[row, "Correlation_of_logs"] <- -1000000000
-      
     }
     row <- row + 1
   }
@@ -417,7 +416,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
       dplyr::group_by(market) %>%
-      dplyr::summarise(Volume=max(SUMTEST)) %>%
+      dplyr::summarise(Volume=max(SUMTEST, na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
       dplyr::arrange(-Volume) %>%
       dplyr::mutate(
@@ -470,7 +469,9 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
        dplyr::select(-C) %>%
      dplyr::group_by(Segment) %>%
      dplyr::mutate(markets=n()*2) %>%
-     dplyr::ungroup()
+     dplyr::ungroup() %>%
+     dplyr::mutate(Correlation_of_logs=dplyr::if_else(Correlation_of_logs==-1000000000, NA, Correlation_of_logs),
+                   Correlation=dplyr::if_else(Correlation==-1000000000, NA, Correlation))
      
    Sizes <- dplyr::select(Sizes, market, bin, Volume) %>%
      dplyr::group_by(bin) %>%
