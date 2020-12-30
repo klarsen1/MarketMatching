@@ -402,7 +402,6 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       dplyr::distinct(market, .keep_all=TRUE) %>%
       ddplyr::arrange(-SUMTEST) %>%
       dplyr::mutate(
-        #rank=rank(-SUMTEST, ties.method="random"), 
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
       dplyr::select(market, rank) %>%
       dplyr::group_split(rank)
