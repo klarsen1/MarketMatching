@@ -11,9 +11,9 @@ The package utilizes dynamic time warping to do the matching and the CausalImpac
 In fact, MarketMatching is simply a wrapper and worfflow for those two packages. 
 MarketMatching does not provide any functionality that cannot be found in these packages 
 but simplifies the workflow of using dtw and CausalImpact together 
-and provides charts and data that are easy to manipulate.
+and provides charts and data that are easy to manipulate, as well as prospective pseudo power analysis capabilities.
 
-Note: If you don't have a set of test markets to match, the `MarketMatching` can provide suggested test/control market pairs using the `suggest_market_splits`option 
+Note: If you don't have a set of test markets to match, the `MarketMatching` can provide suggested test/control market pairs using the `suggest_market_splits` option 
 in the `best_matches()` function. Also, the `test_fake_lift()` function provides pseudo prospective power analysis if you're using the `MarketMatching` 
 package to create your test design (i.e., not just doing the post inference).
 }

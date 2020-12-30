@@ -398,7 +398,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   if (suggest_market_splits==TRUE){
     
     if (dtw_emphasis>0){
-      cat("FYI: It is recommended to set dtw_emphasis to 0 when running optimal splits \n")
+      cat("\tFYI: It is recommended to set dtw_emphasis to 0 when running optimal splits since DTW is not used in the algorithm (correlation-based) \n")
       cat("\n")
     }
     
@@ -491,6 +491,12 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
      dplyr::group_by(bin) %>%
      dplyr::mutate(n=n()) %>%
      dplyr::ungroup()
+   
+   if (nrow(Sizes)-nrow(suggested_split)*2>0){
+     cat("\t", paste0(nrow(Sizes)-nrow(suggested_split)*2, " market(s) were excluded from the splits due the total number of markets being odd \n"))
+     cat("\n")
+       
+   }
     
   } else{
     suggested_split <- NULL
