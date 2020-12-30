@@ -34,7 +34,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   messages <- NULL
   
   if (dtw_emphasis==0){
-    warping_limit <- 1
+    warping_limit <- 0
   }
 
   row <- 1
