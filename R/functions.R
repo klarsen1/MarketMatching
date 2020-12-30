@@ -61,7 +61,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       messages <- messages + 1
     }
     # If data and variance are sufficient and test vector was valid
-    if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit){
+    if (ThisMarket != ThatMarket & isValidTest==TRUE & var(ref)>0 & length(test)>2*warping_limit+1){
       sum_test <- abs(sum(test))
       sum_cntl <- abs(sum(ref))
       if (dtw_emphasis>0 & sum_test>0){
@@ -110,18 +110,20 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   distances$w <- dtw_emphasis
   distances$MatchingStartDate <- min(data$date_var)
   distances$MatchingEndDate <- max(data$date_var)
+  
   # Filter down to only the top matches
-  distances <- dplyr::filter(distances, Skip==FALSE) %>%
-    dplyr::mutate(dist_rank=rank(RelativeDistance)) %>%
+  distances <- distances %>%
+    #dplyr::filter(distances, Skip==FALSE) %>%
+    tidyr::replace_na(list(Correlation_of_logs=-1, Correlation=-1, RelativeDistance=-1000000000)) %>%
+    dplyr::mutate(distances, dist_rank=rank(RelativeDistance)) %>%
     dplyr::mutate(corr_rank=rank(-Correlation)) %>%
     dplyr::mutate(combined_rank=w*dist_rank+(1-w)*corr_rank) %>%
     dplyr::arrange(combined_rank) %>%
-    dplyr::select(-dist_rank, -Skip, -combined_rank, -corr_rank) %>%
+    dplyr::select(-dist_rank, -combined_rank, -corr_rank) %>%
     dplyr::mutate(rank=row_number()) %>%
     dplyr::filter(rank<=matches) %>%
     dplyr::select(-matches, -w) %>%
-    tidyr::replace_na(list(Correlation_of_logs=0)) %>%
-    dplyr::mutate(NORMDIST=2*RAWDIST/(SUMTEST+SUMCNTL))
+    dplyr::mutate(NORMDIST=dplyr::if_else(is.na(RAWDIST), -1000000000, 2*RAWDIST/(SUMTEST+SUMCNTL)))
   
   if (dtw_emphasis==0 & nrow(distances)>0){
     distances$RelativeDistance <- NA
@@ -318,7 +320,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   } else{
     if (is.null(markets_to_be_matched) & suggest_market_splits==TRUE){
       matches <- length(unique(data$id_var))
-      cat("The matches parameter has been overwritten to conduct a full search for optimized pairs \n")
+      cat("The matches parameter has been overwritten for splitting to conduct a full search for optimized pairs \n")
       cat("\n")
     }  
   }
@@ -380,6 +382,12 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   }
   
   if (suggest_market_splits==TRUE){
+    
+    if (dtw_emphasis>0){
+      cat("FYI: It is recommended to set dtw_emphasis to 0 when running optimal splits \n")
+      cat("\n")
+    }
+    
     sizes <- shortest_distances
     sizes$market <- sizes[[id_variable]]
     markets <- length(unique(sizes$market))
@@ -473,6 +481,10 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   }
   
   ### Return the results
+  shortest_distances <- 
+    dplyr::filter(shortest_distances, Skip==FALSE) %>%
+    dplyr::select(-Skip)
+  
   object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable, SuggestedTestControlSplits=suggested_split, Bins=Sizes)
   class(object) <- "matched_market"
   return (object)
