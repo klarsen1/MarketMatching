@@ -400,7 +400,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     
     sizes <- dplyr::select(sizes, market, SUMTEST) %>%
       dplyr::distinct(market, .keep_all=TRUE) %>%
-      ddplyr::arrange(-SUMTEST) %>%
+      dplyr::arrange(-SUMTEST) %>%
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
       dplyr::select(market, rank) %>%
