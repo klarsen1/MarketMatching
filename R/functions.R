@@ -194,8 +194,7 @@ create_market_vectors <- function(data, test_market, ref_market){
 }
 
 mape_no_zeros <- function(test, ref){
-  d <- cbind.data.frame(test, ref)
-  d <- subset(d, test>0 & ref>0)
+  d <- subset(data.frame(cbind(test, ref)), test>0)
   return(mean(abs(d$test - d$ref)/d$test))
 }
 
@@ -490,12 +489,13 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
    Sizes <- dplyr::select(Sizes, market, bin, Volume) %>%
      dplyr::group_by(bin) %>%
      dplyr::mutate(n=n()) %>%
-     dplyr::ungroup()
+     dplyr::ungroup() %>%
+     dplyr::mutate(excluded=dplyr::if_else(market %in% c(suggested_split$test_market,suggested_split$control_market), 0, 1))
    
    if (nrow(Sizes)-nrow(suggested_split)*2>0){
      cat("\t", paste0(nrow(Sizes)-nrow(suggested_split)*2, " market(s) were excluded from the splits due the total number of markets being odd \n"))
+     cat("\t Check the output file called Bins to see the market(s) that were excluded \n")
      cat("\n")
-       
    }
     
   } else{
