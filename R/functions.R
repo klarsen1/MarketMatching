@@ -488,9 +488,9 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
      
    Sizes <- dplyr::select(Sizes, market, bin, Volume) %>%
      dplyr::group_by(bin) %>%
-     dplyr::mutate(n=n()) %>%
+     dplyr::mutate(markets_in_bin=n()) %>%
      dplyr::ungroup() %>%
-     dplyr::mutate(excluded=dplyr::if_else(market %in% c(suggested_split$test_market,suggested_split$control_market), 0, 1))
+     dplyr::mutate(excluded_from_optimal_splits=dplyr::if_else(market %in% c(suggested_split$test_market,suggested_split$control_market), 0, 1))
    
    if (nrow(Sizes)-nrow(suggested_split)*2>0){
      cat("\t", paste0(nrow(Sizes)-nrow(suggested_split)*2, " market(s) were excluded from the splits due the total number of markets being odd \n"))
