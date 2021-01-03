@@ -7,7 +7,7 @@
 #' 
 #' - Given a test market and a matching control market (from above), analyze the causal impact of an intervention.
 #' 
-#' - Create optimal test/control market splits and run pseudo prospective power analysis.
+#' - Create optimal test/control market splits and run pseudo prospective power analyses.
 #' 
 #' The package utilizes the dtw package in CRAN to do the time series matching, and the CausalImpact package to do the inference. 
 #' (Created by Kay Brodersen at Google). For more information about the CausualImpact package, see the following reference:  

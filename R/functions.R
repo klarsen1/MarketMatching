@@ -226,6 +226,7 @@ dw <- function(y, yhat){
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"
 #' @param suggest_market_splits if set to TRUE, best_matches will return a suggested tets/control split based on correlation and market sizes. Default is FALSE.
 #' For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
+#' Note that the algorithm will force test and control to have the same number of markets.
 #' @param splitbins Number of size-based bins used to stratify when splitting markets into test and control.
 #' Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
 #' Less bins means more emphasis on correlation. Default is 10.
@@ -233,7 +234,7 @@ dw <- function(y, yhat){
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
-#' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation.
+#' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation, which is recommended when optimal splits are requested.
 #' An emphasis of 0.5 would yield equal weighting.
 #' @param log_for_splitting This parameter determines if optimal splitting is based on correlations of the raw 
 #' matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE. Default is FALSE.
@@ -282,13 +283,13 @@ dw <- function(y, yhat){
 #' @return Returns an object of type \code{market_matching}. The object has the
 #' following elements:
 #'
-#' \item{\code{BestMatches}}{A data.frame that contains the best matches for each market in the input dataset}
+#' \item{\code{BestMatches}}{A data.frame that contains the best matches for each market in the input dataset. All stats reflect data after the market pair has been joined}
 #' \item{\code{Data}}{The raw data used to do the matching}
 #' \item{\code{MarketID}}{The name of the market identifier}
 #' \item{\code{MatchingMetric}}{The name of the matching variable}
 #' \item{\code{DateVariable}}{The name of the date variable}
-#' \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits}
-#' \item{\code{Bins}}{Bins used for splitting}
+#' \item{\code{SuggestedTestControlSplits}}{Suggested test/control splits. SUMTEST and SUMCNTL are the total market volumes, not volume after joining with other markets}
+#' \item{\code{Bins}}{Bins used for splitting and corresponding volumes}
 
 best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL, date_variable=NULL, matching_variable=NULL, parallel=TRUE, warping_limit=1, start_match_period=NULL, end_match_period=NULL, matches=NULL, dtw_emphasis=1, suggest_market_splits=FALSE, splitbins=10, log_for_splitting=FALSE){
 
@@ -416,18 +417,12 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     bin_size <- floor(markets/bins)
 
     cat(paste0("\tOptimal test/control market splits will be generated, targeting ", bin_size, " markets in each bin. \n"))
-    cat("\tThe algorithm will force test and control to have the same number of markets. \n")
-    cat("\t However, the volumes might be different \n")
     cat("\n")
     if (dtw_emphasis>0){
-      cat("\tFYI: It is recommended to set dtw_emphasis to 0 when running optimal splits since DTW is not used in the algorithm (correlation-based) \n")
+      cat("\tFYI: It is recommended to set dtw_emphasis to 0 when running optimal splits. \n")
       cat("\n")
     }
-    cat("\tResults can be found in the SuggestedTestControlSplits output data frame \n")
-    cat("\tNote: the volume metric can be smaller than the actual volume if a given market. \n")
-    cat("\tThis happens  when the market is the only market with data in certain periods.\n")
-    cat("\n")
-    
+
     if (bin_size %% 2 != 0){
       bin_size <- bin_size-1
       if (bin_size<1){
@@ -435,10 +430,14 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       }
     }
     
-    sizes <- dplyr::select(sizes, market, SUMTEST) %>%
-      dplyr::group_by(market) %>%
-      dplyr::summarise(Volume=max(SUMTEST, na.rm = TRUE)) %>%
+    ## True volume before joining with other markets
+    true_volumes <- dplyr::group_by(data, id_var) %>%
+      dplyr::summarise(Volume=sum(match_var)) %>%
       dplyr::ungroup() %>%
+      dplyr::rename(market=id_var)
+    
+    sizes <- dplyr::select(sizes, market, SUMTEST) %>%
+      dplyr::left_join(true_volumes, by="market") %>%
       dplyr::arrange(-Volume) %>%
       dplyr::mutate(
         bin=floor((dplyr::row_number()-0.1)/bin_size)+1) %>%
@@ -502,7 +501,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
    
    if (nrow(Sizes)-nrow(suggested_split)*2>0){
      cat("\t", paste0(nrow(Sizes)-nrow(suggested_split)*2, " market(s) were excluded from the splits due the total number of markets being odd \n"))
-     cat("\t Check the output file called Bins to see the market(s) that were excluded \n")
+     cat("\t Check the Bins output file to identify the market(s) that were excluded \n")
      cat("\n")
    }
     

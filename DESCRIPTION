@@ -2,7 +2,7 @@ Package: MarketMatching
 Type: Package
 Title: Market Matching and Causal Impact Inference
 Version: 1.2.0
-Date: 2021-01-02
+Date: 2021-01-03
 Authors@R: person("Larsen", "Kim", email = "kblarsen4@gmail.com", role = c("aut", "cre"))
 Description: For a given test market find the best control markets using time series matching and analyze the impact of an intervention. The intervention could be be a marketing event or some other local business tactic that is being tested. The workflow implemented in the Market Matching package utilizes dynamic time warping (the 'dtw' package) to do the matching and the 'CausalImpact' package to analyze the causal impact. In fact, this package can be considered a "workflow wrapper" for those two packages. In addition, if you don't have a set of test markets to match, the MarketMatching package can provide suggested test/control market pairs and pseudo prospective power analysis. 
 Depends: 
