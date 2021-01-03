@@ -5,7 +5,9 @@
 #' 
 #' - For all markets in the input dataset, find the best control markets using time series matching.
 #' 
-#' - Given a test market and a matching control market (from above), analyze the causal impact of an intervention
+#' - Given a test market and a matching control market (from above), analyze the causal impact of an intervention.
+#' 
+#' - Create optimal test/control market splits and run pseudo prospective power analysis.
 #' 
 #' The package utilizes the dtw package in CRAN to do the time series matching, and the CausalImpact package to do the inference. 
 #' (Created by Kay Brodersen at Google). For more information about the CausualImpact package, see the following reference:  
@@ -32,12 +34,10 @@
 #' The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. 
 #' In fact, MarketMatching is simply a wrapper and worfflow for those two packages. 
 #' MarketMatching does not provide any functionality that cannot be found in these packages 
-#' but simplifies the workflow of using dtw and CausalImpact together 
-#' and provides charts and data that are easy to manipulate, as well as prospective pseudo power analysis capabilities.
-#'
-#'Note: If you don't have a set of test markets to match, the `MarketMatching` can provide suggested test/control market pairs using the `suggest_market_splits` option 
-#'in the `best_matches()` function. Also, the `test_fake_lift()` function provides pseudo prospective power analysis if you're using the `MarketMatching` 
-#'package to create your test design (i.e., not just doing the post inference).
+#' but simplifies the workflow of using dtw and CausalImpact together. In addition, if you don't already have a set of test markets to match, `MarketMatching` 
+#' can provide suggested test/control market pairs using the `suggest_market_splits` option 
+#' in the `best_matches()` function. Also, the `test_fake_lift()` function provides pseudo prospective power analysis if you're using the `MarketMatching` 
+#' package to create your test design (i.e., not just doing the post inference).
 #'
 #' @name MarketMatching
 #' @examples
