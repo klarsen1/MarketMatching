@@ -396,11 +396,6 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   
   if (suggest_market_splits==TRUE){
     
-    if (dtw_emphasis>0){
-      cat("\tFYI: It is recommended to set dtw_emphasis to 0 when running optimal splits since DTW is not used in the algorithm (correlation-based) \n")
-      cat("\n")
-    }
-    
     sizes <- shortest_distances
     
     sizes$market <- sizes[[id_variable]]
@@ -419,6 +414,17 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     }
     
     bin_size <- floor(markets/bins)
+
+    cat(paste0("\tOptimal test/control market splits will be generated, targeting ", bin_size, " markets in each bin \n"))
+    cat("\tThe algorithm will force test and control to have the same number of markets. However, the volumes might be different \n")
+    cat("\n")
+    if (dtw_emphasis>0){
+      cat("\tFYI: It is recommended to set dtw_emphasis to 0 when running optimal splits since DTW is not used in the algorithm (correlation-based) \n")
+      cat("\n")
+    }
+    cat("\tResults can be found in the SuggestedTestControlSplits output data frame \n")
+    cat("\tNote: the volume metric can be smaller than the actual volume if a given market is the only market with data in certain periods. \n")
+    cat("\n")
     
     if (bin_size %% 2 != 0){
       bin_size <- bin_size-1
