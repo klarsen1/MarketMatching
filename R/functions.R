@@ -458,7 +458,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       dplyr::ungroup() %>%
       dplyr::rename(market=id_var)
     
-    sizes <- dplyr::select(sizes, market, SUMTEST) %>%
+    sizes <- dplyr::select(sizes, market) %>%
+      dplyr::distinct(market, .keep_all=TRUE) %>%
       dplyr::left_join(true_volumes, by="market") %>%
       dplyr::arrange(-Volume) %>%
       dplyr::mutate(
