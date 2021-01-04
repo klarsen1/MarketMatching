@@ -32,6 +32,12 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   corr_rank <- NULL
   combined_rank <- NULL
   messages <- NULL
+  NORMDIST <- NULL 
+  RAWDIST <- NULL 
+  populated <- NULL
+  SUMTEST <- NULL
+  SUMCNTL <- NULL
+  
   
   if (dtw_emphasis==0){
     warping_limit <- 0
@@ -224,18 +230,18 @@ dw <- function(y, yhat){
 #' which means that a single query value can be mapped to at most 2 reference values.
 #' @param start_match_period the start date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"
-#' @param suggest_market_splits if set to TRUE, best_matches will return a suggested tets/control split based on correlation and market sizes. Default is FALSE.
-#' For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
-#' Note that the algorithm will force test and control to have the same number of markets.
-#' @param splitbins Number of size-based bins used to stratify when splitting markets into test and control.
-#' Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
-#' Less bins means more emphasis on correlation. Default is 10.
 #' @param end_match_period the end date of the matching period (pre period).
 #' Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"
 #' @param matches Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation, which is recommended when optimal splits are requested.
 #' An emphasis of 0.5 would yield equal weighting.
+#' @param suggest_market_splits if set to TRUE, best_matches will return a suggested tets/control split based on correlation and market sizes. Default is FALSE.
+#' For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
+#' Note that the algorithm will force test and control to have the same number of markets.
+#' @param splitbins Number of size-based bins used to stratify when splitting markets into test and control.
+#' Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
+#' Less bins means more emphasis on correlation. Default is 10.
 #' @param log_for_splitting This parameter determines if optimal splitting is based on correlations of the raw 
 #' matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE. Default is FALSE.
 #' @import foreach
@@ -270,15 +276,16 @@ dw <- function(y, yhat){
 #'              markets_to_be_matched=NULL,
 #'              id_variable=NULL,
 #'              date_variable=NULL,
-#'              suggest_market_splits=FALSE,
 #'              matching_variable=NULL,
 #'              parallel=TRUE,
 #'              warping_limit=1,
-#'              splitbins=10,
 #'              start_match_period=NULL,
 #'              end_match_period=NULL,
-#'              matches=5,
-#'              dtw_emphasis=1)
+#'              matches=NULL,
+#'              dtw_emphasis=1, 
+#'              suggest_market_splits=FALSE,
+#'              splitbins=10,
+#'              log_for_splitting=FALSE)
 #'
 #' @return Returns an object of type \code{market_matching}. The object has the
 #' following elements:
@@ -299,6 +306,21 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   date_var <- NULL
   suggested_split <- NULL
   Sizes <-NULL
+  BestControl <- NULL 
+  Corr <- NULL 
+  Correlation <- NULL 
+  Correlation_of_logs <- NULL 
+  SUMCNTL <- NULL 
+  SUMTEST <- NULL 
+  Segment <- NULL 
+  Skip <- NULL 
+  Volume <- NULL 
+  control_market <- NULL
+  market <- NULL 
+  max_rows <- NULL 
+  rows <- NULL 
+  short <- NULL 
+  test_market <- NULL
   
   ## Check the start date and end dates
   stopif(is.null(start_match_period), TRUE, "No start date provided")
@@ -452,23 +474,23 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
       tdf <- shortest_distances
       tdf$test_market <- tdf[[id_variable]]
       if (log_for_splitting==TRUE){
-         tdf$C <- tdf$Correlation_of_logs
+         tdf$Corr <- tdf$Correlation_of_logs
       } else{
-        tdf$C <- tdf$Correlation
+        tdf$Corr <- tdf$Correlation
       }
       tdf <- dplyr::filter(tdf, test_market %in% bin & BestControl %in%  bin) %>%
-        dplyr::arrange(-C) %>%
+        dplyr::arrange(-Corr) %>%
         dplyr::mutate(
                control_market=BestControl, 
                Segment=i)
       rowsleft <- nrow(tdf)
       while(rowsleft>0){
-        optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "Correlation", "SUMTEST", "SUMCNTL", "C")]
+        optimal_list[[j]] <- tdf[1,c("Segment", "test_market", "control_market", "Correlation_of_logs", "Correlation", "SUMTEST", "SUMCNTL", "Corr")]
         test <- tdf[1,"test_market"]
         cntl <- tdf[1,"control_market"]
         tdf <- dplyr::filter(tdf, !(test_market %in% c(test, cntl)))
         tdf <- dplyr::filter(tdf, !(control_market %in% c(test, cntl))) %>%
-          dplyr::arrange(-C)
+          dplyr::arrange(-Corr)
         rowsleft <- nrow(tdf)
         j <- j+1
       }
@@ -482,11 +504,11 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
         dplyr::rename(SUMTEST=Volume) %>%
         dplyr::left_join(dplyr::select(Sizes, Volume, control_market), by="control_market") %>%
         dplyr::rename(SUMCNTL=Volume) %>%
-        dplyr::arrange(Segment, -C) %>%
+        dplyr::arrange(Segment, -Corr) %>%
         dplyr::mutate(PairRank=row_number()) %>%
         dplyr::mutate(Volume=SUMTEST+SUMCNTL, 
                       percent_of_volume=cumsum(Volume)/sum(Volume)) %>%
-       dplyr::select(-C) %>%
+       dplyr::select(-Corr) %>%
      dplyr::group_by(Segment) %>%
      dplyr::mutate(markets=n()*2) %>%
      dplyr::ungroup() %>%
@@ -883,7 +905,6 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' This parameter will overwrite the values specified in prior_level_sd and nseasons. ONLY use this if you're using intricate bsts settings
 #' For most use-cases, using the prior_level_sd and nseasons parameters should be sufficient
 #' @param test_market The name of the test market (character)
-#' @param lift_pattern_type Lift pattern. Default is constant. The other choice is a random lift..
 #' @param end_fake_post_period The end date of the post period. Must be a character of format "YYYY-MM-DD" -- e.g., "2015-11-01"
 #' @param alpha Desired tail-area probability for posterior intervals. For example, 0.05 yields 0.95 intervals
 #' @param prior_level_sd Prior SD for the local level term (Gaussian random walk). Default is 0.01. The bigger this number is, the more wiggliness is allowed for the local level term.
@@ -894,6 +915,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #' @param max_fake_lift The maximum absolute fake lift -- e.g., 0.1 means that the max lift evaluated is 10 percent and the min lift is -10 percent
 #' Note that randomization is injected into the lift, which means that the max lift will not be exactly as specified
 #' @param steps The number of steps used to calculate the power curve (default is 10)
+#' @param lift_pattern_type Lift pattern. Default is constant. The other choice is a random lift..
 #' 
 #' 
 #' @import ggplot2
@@ -931,11 +953,11 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'           end_fake_post_period=NULL,
 #'           alpha=0.05,
 #'           prior_level_sd=0.01,
-#'           lift_pattern_type="constant",
-#'           control_matches=5, 
+#'           control_matches=NULL, 
 #'           nseasons=NULL, 
 #'           max_fake_lift=NULL, 
-#'           steps=10)
+#'           steps=10,
+#'           lift_pattern_type="constant")
 #'
 #' @return Returns an object of type \code{matched_market_power}. The object has the
 #' following elements:
@@ -958,6 +980,11 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
   counter <- NULL
   s <- NULL
   m <- NULL
+  upper_bound <- NULL
+  lower_bound <- NULL 
+  Predicted <- NULL
+  Date <- NULL
+  
   
   if (steps<10){steps <- 10}
 
@@ -1174,6 +1201,11 @@ roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthe
   s <- NULL
   e <- NULL
   mm <- NULL
+  percent_of_volume <- NULL
+  date_var <- NULL 
+  match_var <- NULL 
+  TestCell <- NULL 
+  
   
   ###  check out the matched markets object
   stopif(is.null(matched_markets), TRUE, "The matched_markets object is null")

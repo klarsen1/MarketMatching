@@ -84,7 +84,7 @@
 #' ## Since this is weather data it is a not a very meaningful example. 
 #' ## This is merely to demonstrate the functionality.
 #' ##-----------------------------------------------------------------------
-#' power <- MarketMatching::prospective_power(matched_markets = mm, 
+#' power <- MarketMatching::test_fake_lift(matched_markets = mm, 
 #'                                      test_market = "CPH", 
 #'                                      end_fake_post_period = "2015-10-01", 
 #'                                      prior_level_sd = 0.002, 

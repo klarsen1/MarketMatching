@@ -9,11 +9,11 @@ test_fake_lift(matched_markets=NULL,
           end_fake_post_period=NULL,
           alpha=0.05,
           prior_level_sd=0.01,
-          lift_pattern_type="constant",
-          control_matches=5, 
+          control_matches=NULL, 
           nseasons=NULL, 
           max_fake_lift=NULL, 
-          steps=10)
+          steps=10,
+          lift_pattern_type="constant")
 }
 \arguments{
 \item{matched_markets}{A matched_market object created by the market_matching function
