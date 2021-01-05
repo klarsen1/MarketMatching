@@ -290,7 +290,7 @@ dw <- function(y, yhat){
 #' @return Returns an object of type \code{market_matching}. The object has the
 #' following elements:
 #'
-#' \item{\code{BestMatches}}{A data.frame that contains the best matches for each market in the input dataset. All stats reflect data after the market pair has been joined}
+#' \item{\code{BestMatches}}{A data.frame that contains the best matches for each market. All stats reflect data after the market pairs have been joined; SUMTEST and SUMCNTL can be different than in the Bins output table}
 #' \item{\code{Data}}{The raw data used to do the matching}
 #' \item{\code{MarketID}}{The name of the market identifier}
 #' \item{\code{MatchingMetric}}{The name of the matching variable}
