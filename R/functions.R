@@ -408,6 +408,9 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     shortest_distances <- data.frame(dplyr::bind_rows(all_distances))
   }else{
     ncore <- detectCores() - 1
+    if (ncore>length(markets_to_be_matched)){
+       ncore <- length(markets_to_be_matched)  
+    }
     registerDoParallel(ncore)
     loop_result <- foreach(i = 1:length(markets_to_be_matched)) %dopar% 
         {
@@ -1117,7 +1120,7 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
          theme_bw() + theme(legend.title = element_blank()) + ylab("") + xlab("") +
          geom_vline(xintercept=as.numeric(MatchingEndDate), linetype=2) +
          scale_y_continuous(labels = scales::comma, limits=c(ymin, ymax)) +
-         ggtitle(paste0("Test Market: ",test_market))
+         ggtitle(paste0("Fake lift = ", round(fake_lift, 2)))
        counter <- counter+1
     }
   power_df <- data.frame(dplyr::bind_rows(power))
@@ -1169,11 +1172,11 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
 #' ##-----------------------------------------------------------------------
 #'                    
 #' rollup <- roll_up_optimal_pairs(matched_markets=mm, 
-#'                                 perc_cutoff=1, 
+#'                                 percent_cutoff=1, 
 #'                                 synthetic=FALSE)
 #'                                 
 #' ##-----------------------------------------------------------------------
-#' ## Pseudo power analysis
+#' ## Pseudo power analysis (fake lift analysis)
 #' ##-----------------------------------------------------------------------
 #' 
 #' results <- test_fake_lift(matched_markets=rollup,
@@ -1184,9 +1187,9 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
 #'                      max_fake_lift=0.1)
 #'
 #' @usage
-#' rollup <- roll_up_optimal_pairs(matched_markets=NULL,
-#'                                 percent_cutoff=1,
-#'                                 synthetic=FALSE)
+#' roll_up_optimal_pairs(matched_markets=NULL,
+#'                       percent_cutoff=1,
+#'                       synthetic=FALSE)
 #'
 #' @return Returns an object of type \code{market_matching}. The object has the
 #' following elements:
@@ -1257,6 +1260,7 @@ roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthe
                      suggest_market_splits = FALSE,
                      dtw_emphasis = 0,
                      matches=NULL,
+                     parallel = FALSE,
                      matching_variable = "match_var", 
                      date_variable = "date_var", 
                      id_variable = "TestCell", 

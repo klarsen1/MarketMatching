@@ -4,9 +4,9 @@
 \alias{roll_up_optimal_pairs}
 \title{Roll up the suggested test/control optimal pairs for pseudo power analysis (testing fake lift)}
 \usage{
-rollup <- roll_up_optimal_pairs(matched_markets=NULL,
-                                percent_cutoff=1,
-                                synthetic=FALSE)
+roll_up_optimal_pairs(matched_markets=NULL,
+                      percent_cutoff=1,
+                      synthetic=FALSE)
 }
 \arguments{
 \item{matched_markets}{A matched market object from best_matches.}
@@ -53,11 +53,11 @@ mm <- best_matches(data=weather,
 ##-----------------------------------------------------------------------
                    
 rollup <- roll_up_optimal_pairs(matched_markets=mm, 
-                                perc_cutoff=1, 
+                                percent_cutoff=1, 
                                 synthetic=FALSE)
                                 
 ##-----------------------------------------------------------------------
-## Pseudo power analysis
+## Pseudo power analysis (fake lift analysis)
 ##-----------------------------------------------------------------------
 
 results <- test_fake_lift(matched_markets=rollup,
