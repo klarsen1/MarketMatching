@@ -28,7 +28,7 @@ following elements:
 \item{\code{SuggestedTestControlSplits}}{Always NULL}
 }
 \description{
-\code{roll_up_optimal_pairs} Takes the suggested optimal pairs and aggregates the data for pseudo power analysis (test_fake_lift).
+\code{roll_up_optimal_pairs} Takes the suggested optimal pairs from best_matches() and aggregates the data for pseudo power analysis (test_fake_lift()).
 You run this function and then pass the result (a matched markets object) to test_fake_lift.
 }
 \examples{

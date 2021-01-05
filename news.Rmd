@@ -10,7 +10,14 @@ Package: MarketMatching
 Version: 1.2.0
 
 # MarketMacthing version 1.2.0
-- Clean up bugs in version 1.1.4 and submit to CRAN
+- This is a major release for CRAN.
+- The biggest differences between this version and the previous version in CRAN are: 
+  (a) Prospective pseudo power analysis by testing the design against fake interventions.
+  (b) Generate optimal test/control market splits.
+
+
+# MarketMacthing version 1.1.4
+- Clean up bugs from 1.1.9
 
 # MarketMacthing version 1.1.4
 - Changed MAPE calculation to not re-scale the residuals.

@@ -105,8 +105,7 @@
 #'                                   matching_variable="Mean_TemperatureF",
 #'                                   suggest_market_splits=TRUE,
 #'                                   parallel=FALSE,
-#'                                   warping_limit=1, # warping limit=1
-#'                                   dtw_emphasis=0, # rely only on correlation
+#'                                   dtw_emphasis=0, # rely only on correlation for this analysis
 #'                                   start_match_period="2014-01-01",
 #'                                   end_match_period="2014-10-01")
 #'
@@ -117,9 +116,11 @@
 #'head(mm$SuggestedTestControlSplits)
 #'
 #'##-----------------------------------------------------------------------
-#'## Pass the results to test_fake_lift to get pseudo power curves for the splits
+#'## Pass the results to test_fake_lift to get pseudo power curves for the splits.
+#'## This tells us how well the design can detect various lifts.
 #'## Not a meaningful example for this data. Just to illustrate.
-#'## Note that the rollup() function will label the test markets "TEST"
+#'## Note that the rollup() function will aggregate the test and control markets. 
+#'## The new aggregated test markets will be labeled "TEST."
 #'##-----------------------------------------------------------------------
 #'rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
 #'                                                synthetic=FALSE)

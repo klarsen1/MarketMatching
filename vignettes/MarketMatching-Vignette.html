@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2020-09-17" />
+<meta name="date" content="2021-01-05" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -303,7 +303,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">MarketMatching Package Vignette</h1>
 <h4 class="author">Kim Larsen</h4>
-<h4 class="date">2020-09-17</h4>
+<h4 class="date">2021-01-05</h4>
 
 
 
@@ -650,7 +650,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </table>
 <div id="pseudo-prospective-power-curves" class="section level2">
 <h2>Pseudo Prospective Power Curves</h2>
-<p>In this example, we’re calculating power (probability of a causal impact) at various levels of fake interventions starting after 2014-10-01 and ending at 2015-10-01. We’re analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve ddoes not reach its minimum at zero there may be systemic model bias in the post period. That’s why it’s important to look at negative an postive lift even though we’re normally testing for positive lift in the future study.</p>
+<p>In this example, we’re calculating the probability of a causal impact at various levels of fake interventions (“pseudo power curves”) starting on 2014-10-02 and ending at 2015-10-01. We’re analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve ddoes not reach its minimum at zero there may be systemic model bias in the post period. That’s why it’s important to look at negative an postive lift even though we’re normally testing for positive lift in the future study.</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">##-----------------------------------------------------------------------</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"><span class="co">## Find the best 5 matches for each airport time series. Matching will</span></a>
 <a class="sourceLine" id="cb11-3" data-line-number="3"><span class="co">## rely entirely on dynamic time warping (dtw) with a limit of 1</span></a>
@@ -733,18 +733,19 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb14-21" data-line-number="21"></a>
 <a class="sourceLine" id="cb14-22" data-line-number="22"><span class="co">##-----------------------------------------------------------------------</span></a>
 <a class="sourceLine" id="cb14-23" data-line-number="23"><span class="co">## Pass the results to test_fake_lift to get pseudo power curves for the splits</span></a>
-<a class="sourceLine" id="cb14-24" data-line-number="24"><span class="co">## Not a meaningful example for this data. Just to illustrate.</span></a>
-<a class="sourceLine" id="cb14-25" data-line-number="25"><span class="co">## Note that the rollup() function will label the test markets &quot;TEST&quot;</span></a>
-<a class="sourceLine" id="cb14-26" data-line-number="26"><span class="co">##-----------------------------------------------------------------------</span></a>
-<a class="sourceLine" id="cb14-27" data-line-number="27">rollup &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><span class="kw">roll_up_optimal_pairs</span>(<span class="dt">matched_markets =</span> mm, </a>
-<a class="sourceLine" id="cb14-28" data-line-number="28">                                <span class="dt">synthetic=</span><span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb14-29" data-line-number="29"></a>
-<a class="sourceLine" id="cb14-30" data-line-number="30">power &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><span class="kw">test_fake_lift</span>(<span class="dt">matched_markets =</span> rollup, </a>
-<a class="sourceLine" id="cb14-31" data-line-number="31">                        <span class="dt">test_market =</span> <span class="st">&quot;TEST&quot;</span>,</a>
-<a class="sourceLine" id="cb14-32" data-line-number="32">                        <span class="dt">end_fake_post_period =</span> <span class="st">&quot;2015-10-01&quot;</span>,</a>
-<a class="sourceLine" id="cb14-33" data-line-number="33">                        <span class="dt">lift_pattern_type =</span> <span class="st">&quot;constant&quot;</span>,</a>
-<a class="sourceLine" id="cb14-34" data-line-number="34">                        <span class="dt">steps=</span><span class="dv">20</span>, </a>
-<a class="sourceLine" id="cb14-35" data-line-number="35">                        <span class="dt">max_fake_lift =</span> <span class="fl">0.1</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb14-24" data-line-number="24"><span class="co">## This tells us how well the design can detect various lifts.</span></a>
+<a class="sourceLine" id="cb14-25" data-line-number="25"><span class="co">## Not a meaningful example for this data. Just to illustrate.</span></a>
+<a class="sourceLine" id="cb14-26" data-line-number="26"><span class="co">## Note that the rollup() function will label the aggregated test markets &quot;TEST.&quot;</span></a>
+<a class="sourceLine" id="cb14-27" data-line-number="27"><span class="co">##-----------------------------------------------------------------------</span></a>
+<a class="sourceLine" id="cb14-28" data-line-number="28">rollup &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><span class="kw">roll_up_optimal_pairs</span>(<span class="dt">matched_markets =</span> mm, </a>
+<a class="sourceLine" id="cb14-29" data-line-number="29">                                <span class="dt">synthetic=</span><span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb14-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb14-31" data-line-number="31">power &lt;-<span class="st"> </span>MarketMatching<span class="op">::</span><span class="kw">test_fake_lift</span>(<span class="dt">matched_markets =</span> rollup, </a>
+<a class="sourceLine" id="cb14-32" data-line-number="32">                        <span class="dt">test_market =</span> <span class="st">&quot;TEST&quot;</span>,</a>
+<a class="sourceLine" id="cb14-33" data-line-number="33">                        <span class="dt">end_fake_post_period =</span> <span class="st">&quot;2015-10-01&quot;</span>,</a>
+<a class="sourceLine" id="cb14-34" data-line-number="34">                        <span class="dt">lift_pattern_type =</span> <span class="st">&quot;constant&quot;</span>,</a>
+<a class="sourceLine" id="cb14-35" data-line-number="35">                        <span class="dt">steps=</span><span class="dv">10</span>, </a>
+<a class="sourceLine" id="cb14-36" data-line-number="36">                        <span class="dt">max_fake_lift =</span> <span class="fl">0.1</span>)</a></code></pre></div>
 </div>
 </div>
 <div id="how-does-dynamic-time-warping-work" class="section level1">

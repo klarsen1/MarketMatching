@@ -51,7 +51,7 @@ following elements:
 \item{\code{FitData}}{The underlying actual versus fitted data for each fake lift}
 }
 \description{
-\code{test_fake_lift} Analyzes the causal impact of a fake intervention using the CausalImpact package, given a test market and a matched_market object from the best_matches function.
+\code{test_fake_lift} Given a matched_market object from the best_matches function, this function analyzes the causal impact of fake interventions using the CausalImpact package.
 The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 }
 \examples{

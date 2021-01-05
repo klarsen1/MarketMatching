@@ -146,7 +146,7 @@ knitr::kable(head(coeff))
 ```
 
 ## Pseudo Prospective Power Curves
-In this example, we're calculating power (probability of a causal impact) at various levels of fake interventions starting after 2014-10-01 and ending at 2015-10-01. We're analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve ddoes not reach its minimum at zero there may be systemic model bias in the post period. That's why it's important to look at negative an postive lift even though we're normally testing for positive lift in the future study.
+In this example, we're calculating the probability of a causal impact at various levels of fake interventions ("pseudo power curves") starting on 2014-10-02 and ending at 2015-10-01. We're analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve ddoes not reach its minimum at zero there may be systemic model bias in the post period. That's why it's important to look at negative an postive lift even though we're normally testing for positive lift in the future study.
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
 ##-----------------------------------------------------------------------
@@ -213,8 +213,9 @@ head(mm$SuggestedTestControlSplits)
 
 ##-----------------------------------------------------------------------
 ## Pass the results to test_fake_lift to get pseudo power curves for the splits
+## This tells us how well the design can detect various lifts.
 ## Not a meaningful example for this data. Just to illustrate.
-## Note that the rollup() function will label the test markets "TEST"
+## Note that the rollup() function will label the aggregated test markets "TEST."
 ##-----------------------------------------------------------------------
 rollup <- MarketMatching::roll_up_optimal_pairs(matched_markets = mm, 
                                 synthetic=FALSE)
@@ -223,7 +224,7 @@ power <- MarketMatching::test_fake_lift(matched_markets = rollup,
                         test_market = "TEST",
                         end_fake_post_period = "2015-10-01",
                         lift_pattern_type = "constant",
-                        steps=20, 
+                        steps=10, 
                         max_fake_lift = 0.1)
 ```
 # How Does Dynamic Time Warping Work?

@@ -43,15 +43,15 @@ Must be a character of format "YYYY-MM-DD" -- e.g., "2015-01-01"}
 \item{end_match_period}{the end date of the matching period (pre period).
 Must be a character of format "YYYY-MM-DD" -- e.g., "2015-10-01"}
 
-\item{matches}{Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference)}
+\item{matches}{Number of matching markets to keep in the output (to use less markets for inference, use the control_matches parameter when calling inference). Default is to keep all matches.}
 
 \item{dtw_emphasis}{Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation, which is recommended when optimal splits are requested.
 An emphasis of 0.5 would yield equal weighting.}
 
-\item{suggest_market_splits}{if set to TRUE, best_matches will return a suggested tets/control split based on correlation and market sizes. Default is FALSE.
+\item{suggest_market_splits}{if set to TRUE, best_matches will return suggested tets/control splits based on correlation and market sizes. Default is FALSE.
 For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
-Note that the algorithm will force test and control to have the same number of markets.}
+Note that the algorithm will force test and control to have the same number of markets. So if the total number of markets is odd, one market will be left out.}
 
 \item{splitbins}{Number of size-based bins used to stratify when splitting markets into test and control.
 Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
@@ -64,12 +64,12 @@ matching metric values or the correlations of log(matching metric). Only relevan
 Returns an object of type \code{market_matching}. The object has the
 following elements:
 
-\item{\code{BestMatches}}{A data.frame that contains the best matches for each market in the input dataset. All stats reflect data after the market pair has been joined}
+\item{\code{BestMatches}}{A data.frame that contains the best matches for each market. All stats reflect data after the market pairs have been joined by date. Thus SUMTEST and SUMCNTL can have smaller values than what you see in the Bins output table}
 \item{\code{Data}}{The raw data used to do the matching}
 \item{\code{MarketID}}{The name of the market identifier}
 \item{\code{MatchingMetric}}{The name of the matching variable}
 \item{\code{DateVariable}}{The name of the date variable}
-\item{\code{SuggestedTestControlSplits}}{Suggested test/control splits. SUMTEST and SUMCNTL are the total market volumes, not volume after joining with other markets}
+\item{\code{SuggestedTestControlSplits}}{Suggested test/control splits. SUMTEST and SUMCNTL are the total market volumes, not volume after joining with other markets. They're greater or equal to the values in the BestMatches file.}
 \item{\code{Bins}}{Bins used for splitting and corresponding volumes}
 }
 \description{
