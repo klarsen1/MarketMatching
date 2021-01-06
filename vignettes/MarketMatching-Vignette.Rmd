@@ -15,7 +15,8 @@ If you ever spent time in the field of marketing analytics, chances are that you
 
 Intervention analyses typically require more judgement than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:
 
-1. Find matching *control* markets for the *test* market where the event took place using time series matching based on historical data prior to the event (the "pre period").
+0. Identify the *test* market(s) where the intervention will happen. This can be based on data (optimal splitting) as well as business reasons and limitations.
+1. Find matching *control* markets for the test market(s) where the event took place using time series matching based on historical data prior to the event (the "pre period").
 2. Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the "post period"), while factoring in differences between the markets prior to the event.
 
 The purpose of this document is to describe a robust approach to intervention analysis based on two key `R` packages: the `CausalImpact` package written by Kay Brodersen at Google and the `dtw` package available in CRAN. In addition, we will introduce an `R` package called `MarketMatching` which implements a simple workflow based on these two packages.
@@ -145,8 +146,8 @@ coeff <- results$Coefficients
 knitr::kable(head(coeff))
 ```
 
-## Pseudo Prospective Power Curves
-In this example, we're calculating the probability of a causal impact at various levels of fake interventions ("pseudo power curves") starting on 2014-10-02 and ending at 2015-10-01. We're analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve ddoes not reach its minimum at zero there may be systemic model bias in the post period. That's why it's important to look at negative an postive lift even though we're normally testing for positive lift in the future study.
+## Prospective Pseudo Power Curves
+In this example, we're calculating the probability of a causal impact at various levels of fake interventions ("pseudo power curves") starting on 2014-10-02 and ending at 2015-10-01. We're analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve does not reach its minimum at zero there may be systemic model bias in the post period. That's why it's important to look at negative an positive lift even though we're normally testing for positive lift in the future study.
 
 ```{r, echo = TRUE, message=FALSE, eval=TRUE}
 ##-----------------------------------------------------------------------
@@ -188,7 +189,7 @@ power$ResultsGraph
 This example shows how to get test/control market pair suggestions from the distances.
 The package stratifies the markets by size (sum of Y) and the creates pairs based on the correlation of logged values. To invoke this markets_to_matched must be NULL. 
 
-Once the optimized pairs have been generated they are passed to the pseudo power function for evaluation. The `synthetic` parameter in the roll_up_optimal_pairs function determines if the control markets will be aggregated (equal weights in `bsts` and `CausalImpact`) or if they'll be left as individual markets and get separate weighths (synthetic control).
+Once the optimized pairs have been generated they are passed to the pseudo power function for evaluation. The `synthetic` parameter in the roll_up_optimal_pairs function determines if the control markets will be aggregated (equal weights in `bsts` and `CausalImpact`) or if they'll be left as individual markets and get separate weights (synthetic control).
 ```{r, echo = TRUE, message=FALSE, eval=FALSE}
 ##-----------------------------------------------------------------------
 ## Find all matches for each airport (market) time series. 

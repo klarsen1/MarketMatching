@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kim Larsen" />
 
-<meta name="date" content="2021-01-05" />
+<meta name="date" content="2021-01-06" />
 
 <title>MarketMatching Package Vignette</title>
 
@@ -303,7 +303,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">MarketMatching Package Vignette</h1>
 <h4 class="author">Kim Larsen</h4>
-<h4 class="date">2021-01-05</h4>
+<h4 class="date">2021-01-06</h4>
 
 
 
@@ -311,8 +311,9 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <h1>Introduction</h1>
 <p>If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major local PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we have to analyze the impact from a bird’s eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you’re in.</p>
 <p>Intervention analyses typically require more judgement than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:</p>
-<ol style="list-style-type: decimal">
-<li>Find matching <em>control</em> markets for the <em>test</em> market where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
+<ol start="0" style="list-style-type: decimal">
+<li>Identify the <em>test</em> market(s) where the intervention will happen. This can be based on data (optimal splitting) as well as business reasons and limitations.</li>
+<li>Find matching <em>control</em> markets for the test market(s) where the event took place using time series matching based on historical data prior to the event (the “pre period”).</li>
 <li>Analyze the causal impact of the event by comparing the observed data for the test and control markets following the event (the “post period”), while factoring in differences between the markets prior to the event.</li>
 </ol>
 <p>The purpose of this document is to describe a robust approach to intervention analysis based on two key <code>R</code> packages: the <code>CausalImpact</code> package written by Kay Brodersen at Google and the <code>dtw</code> package available in CRAN. In addition, we will introduce an <code>R</code> package called <code>MarketMatching</code> which implements a simple workflow based on these two packages.</p>
@@ -648,9 +649,9 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </tr>
 </tbody>
 </table>
-<div id="pseudo-prospective-power-curves" class="section level2">
-<h2>Pseudo Prospective Power Curves</h2>
-<p>In this example, we’re calculating the probability of a causal impact at various levels of fake interventions (“pseudo power curves”) starting on 2014-10-02 and ending at 2015-10-01. We’re analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve ddoes not reach its minimum at zero there may be systemic model bias in the post period. That’s why it’s important to look at negative an postive lift even though we’re normally testing for positive lift in the future study.</p>
+<div id="prospective-pseudo-power-curves" class="section level2">
+<h2>Prospective Pseudo Power Curves</h2>
+<p>In this example, we’re calculating the probability of a causal impact at various levels of fake interventions (“pseudo power curves”) starting on 2014-10-02 and ending at 2015-10-01. We’re analyzing fake lifts from -5 to 5 percent in 10 steps (default is 10). This will help you evaluate if your choice of test and control markets creates a sufficient model to measure a realistic lift from a future intervention. Ideally, you want to see a curve that starts at high probability on the left side, reaches its minimum at zero lift, and then rises again symmetrically. If the curve does not reach its minimum at zero there may be systemic model bias in the post period. That’s why it’s important to look at negative an positive lift even though we’re normally testing for positive lift in the future study.</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">##-----------------------------------------------------------------------</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2"><span class="co">## Find the best 5 matches for each airport time series. Matching will</span></a>
 <a class="sourceLine" id="cb11-3" data-line-number="3"><span class="co">## rely entirely on dynamic time warping (dtw) with a limit of 1</span></a>
@@ -709,7 +710,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="getting-optimized-market-pairs-testcontrol-recommendations" class="section level2">
 <h2>Getting optimized market pairs (test/control) recommendations</h2>
 <p>This example shows how to get test/control market pair suggestions from the distances. The package stratifies the markets by size (sum of Y) and the creates pairs based on the correlation of logged values. To invoke this markets_to_matched must be NULL.</p>
-<p>Once the optimized pairs have been generated they are passed to the pseudo power function for evaluation. The <code>synthetic</code> parameter in the roll_up_optimal_pairs function determines if the control markets will be aggregated (equal weights in <code>bsts</code> and <code>CausalImpact</code>) or if they’ll be left as individual markets and get separate weighths (synthetic control).</p>
+<p>Once the optimized pairs have been generated they are passed to the pseudo power function for evaluation. The <code>synthetic</code> parameter in the roll_up_optimal_pairs function determines if the control markets will be aggregated (equal weights in <code>bsts</code> and <code>CausalImpact</code>) or if they’ll be left as individual markets and get separate weights (synthetic control).</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">##-----------------------------------------------------------------------</span></a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co">## Find all matches for each airport (market) time series. </span></a>
 <a class="sourceLine" id="cb14-3" data-line-number="3"><span class="co">##-----------------------------------------------------------------------</span></a>

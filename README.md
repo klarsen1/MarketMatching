@@ -12,18 +12,20 @@ etc.). Data science may be changing at a fast pace but this is an old
 school use-case that is still very relevant no matter what industry
 you’re in.
 
-Intervention analyses require more judgement than evaluation of
+Intervention analyses require more judgment than evaluation of
 randomized test/control studies. When analyzing interventions through
 time series analysis we typically go through two steps, each of which
-can involve multiple analytical decisions:
-
-1.  Find matching *control* markets for the *test* market where the
-    event took place using time series matching based on historical data
-    prior to the event (the “pre period”).
-2.  Analyze the causal impact of the event by comparing the observed
-    data for the test and control markets following the event (the “post
-    period”), while factoring in differences between the markets prior
-    to the event.
+can involve multiple analytical decisions: 0. Identify the *test*
+market(s) where the intervention will happen. This can be based on data
+(optimal splitting) as well as business reasons and limitations. 1. Find
+matching *control* markets for the test market(s) where the event took
+place using time series matching based on historical data prior to the
+event (the “pre period”). If the intervention has not happened, check
+the accuracy of the test/control design via a fake intervention
+analysis.. 2. Analyze the causal impact of the event by comparing the
+observed data for the test and control markets following the event (the
+“post period”), while factoring in differences between the markets prior
+to the event.
 
 The purpose of this document is to describe a robust approach to
 intervention analysis based on two key `R` packages: the `CausalImpact`
@@ -156,8 +158,8 @@ Summary of features:
     slab-and-prior model.
 -   All plots are done in `ggplot2` and can easily be extracted and
     manipulated.
--   Facilitates pseudo prospective epower analysis for geo-based
-    experiments.
+-   Facilitates pseudo prospective power analysis for geo-based
+    experiments (measuring causal impact of fake interventions).
 -   Provides suggested optimal test/control market pairs for future
     studies (in case the test markets have not been identified).
 
@@ -300,15 +302,15 @@ coeff <- results$Coefficients
 knitr::kable(head(coeff))
 ```
 
-Prospective Power Curves
-========================
+Prospective Pseudo Power Curves
+===============================
 
-In this example, we’re calculating power (probability of a causal impact
-at alpha=0.05) using a fake interventions starting after 2014-10-01 and
-ending at 2015-10-01. We’re analyzing fake lifts from 0 to 5 percent in
-5 steps (default is 10). This will help you evaluate if your choice of
-test and control markets creates a sufficient model to measure a
-realistic lift from a future intervention.
+In this example, the probability of a causal impact at different levels
+of fake interventions starting after 2014-10-01 and ending at
+2015-10-01. We’re analyzing fake lifts from 0 to 5 percent in 5 steps
+(default is 10). This will help you evaluate if your choice of test and
+control markets creates a sufficient model to measure a realistic lift
+from a future intervention.
 
 ``` r
 ##-----------------------------------------------------------------------
@@ -360,7 +362,7 @@ Once the optimized pairs have been generated they are passed to the
 pseudo power function for evaluation. The `synthetic` parameter in the
 roll\_up\_optimal\_pairs function determines if the control markets will
 be aggregated (equal weights in `bsts` and `CausalImpact`) or if they’ll
-be left as individual markets and get separate weighths (synthetic
+be left as individual markets and get separate weights (synthetic
 control).
 
 ``` r

@@ -236,11 +236,11 @@ dw <- function(y, yhat){
 #' @param dtw_emphasis Number from 0 to 1. The amount of emphasis placed on dtw distances, versus correlation, when ranking markets.
 #' Default is 1 (all emphasis on dtw). If emphasis is set to 0, all emphasis would be put on correlation, which is recommended when optimal splits are requested.
 #' An emphasis of 0.5 would yield equal weighting.
-#' @param suggest_market_splits if set to TRUE, best_matches will return suggested tets/control splits based on correlation and market sizes. Default is FALSE.
+#' @param suggest_market_splits if set to TRUE, best_matches will return suggested test/control splits based on correlation and market sizes. Default is FALSE.
 #' For this option to be invoked, markets_to_be_matched must be NULL (i.e., you must run a full match).
 #' Note that the algorithm will force test and control to have the same number of markets. So if the total number of markets is odd, one market will be left out.
 #' @param splitbins Number of size-based bins used to stratify when splitting markets into test and control.
-#' Only markets inside the same bin can be matched. More bins means more emphasis on market size when spliting.
+#' Only markets inside the same bin can be matched. More bins means more emphasis on market size when splitting.
 #' Less bins means more emphasis on correlation. Default is 10.
 #' @param log_for_splitting This parameter determines if optimal splitting is based on correlations of the raw 
 #' matching metric values or the correlations of log(matching metric). Only relevant if suggest_market_splits is TRUE. Default is FALSE.

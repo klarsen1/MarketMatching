@@ -8,7 +8,7 @@
 For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention (prospective or historical).
 The intervention could be be a marketing event or some other local business tactic that is being tested. 
 The package utilizes dynamic time warping to do the matching and the CausalImpact package to analyze the causal impact. 
-In fact, MarketMatching is simply a wrapper and worfflow for those two packages. 
+In fact, MarketMatching is simply a wrapper and workflow for those two packages. 
 MarketMatching does not provide any functionality that cannot be found in these packages 
 but simplifies the workflow of using dtw and CausalImpact together. In addition, if you don't already have a set of test markets to match, `MarketMatching` 
 can provide suggested test/control market pairs using the `suggest_market_splits` option 
@@ -32,7 +32,7 @@ CausalImpact version 1.0.3, Brodersen et al., Annals of Applied Statistics (2015
 The MarketMatching has two separate functions to perform the tasks described above:
 
 - best_matches(): This function finds the best matching control markets for all markets in the input dataset. If you don't know the test markets
-the funcrtion can also provide suggested optimized test/control pairs.
+the function can also provide suggested optimized test/control pairs.
 
 - inference(): Given an object from best_matches(), this function analyzes the causal impact of an intervention.
 
