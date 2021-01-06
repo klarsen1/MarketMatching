@@ -13,7 +13,7 @@ vignette: >
 # Introduction
 If you ever spent time in the field of marketing analytics, chances are that you have analyzed the existence of a causal impact from a new local TV campaign, a major local PR event, or the emergence of a new local competitor. From an analytical standpoint these type of events all have one thing in common: the impact cannot be tracked at the individual customer level and hence we have to analyze the impact from a bird's eye view using time series analysis at the market level (e.g., DMA, state, etc.). Data science may be changing at a fast pace but this is an old school use-case that is still very relevant no matter what industry you're in.
 
-Intervention analyses typically require more judgement than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:
+Intervention analyses typically require more judgment than evaluation of randomized test/control studies. Specifically, when analyzing interventions through time series analysis we typically go through two steps, each of which can involve multiple analytical decisions:
 
 0. Identify the *test* market(s) where the intervention will happen. This can be based on data (optimal splitting) as well as business reasons and limitations.
 1. Find matching *control* markets for the test market(s) where the event took place using time series matching based on historical data prior to the event (the "pre period").
