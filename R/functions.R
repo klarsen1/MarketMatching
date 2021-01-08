@@ -257,6 +257,7 @@ dw <- function(y, yhat){
 #'
 #' @export best_matches
 #' @examples
+#' \dontrun{
 #' ##-----------------------------------------------------------------------
 #' ## Find the best matches for the CPH airport time series
 #' ##-----------------------------------------------------------------------
@@ -271,6 +272,7 @@ dw <- function(y, yhat){
 #'                    start_match_period="2014-01-01",
 #'                    end_match_period="2014-10-01")
 #' head(mm$BestMatches)
+#' }
 #'
 #' @usage
 #' best_matches(data=NULL,
@@ -570,6 +572,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 
 #' @export inference
 #' @examples
+#' \dontrun{
 #' library(MarketMatching)
 #' ##-----------------------------------------------------------------------
 #' ## Analyze causal impact of a made-up weather intervention in Copenhagen
@@ -595,6 +598,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #'                      control_matches=5, # use all 5 matches for inference
 #'                      end_post_period="2015-12-15",
 #'                      prior_level_sd=0.002)
+#' }
 #' @usage
 #' inference(matched_markets=NULL,
 #'           bsts_modelargs=NULL,
@@ -639,6 +643,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #' @import zoo
 #' @importFrom bsts SuggestBurn
 #' @importFrom scales comma
+#' @import Boom
 
 inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NULL, end_post_period=NULL, alpha=0.05, prior_level_sd=0.01, control_matches=5, analyze_betas=FALSE, nseasons=NULL){
 
@@ -927,6 +932,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 
 #' @export test_fake_lift
 #' @examples
+#' \dontrun{
 #' library(MarketMatching)
 #' ##-----------------------------------------------------------------------
 #' ## Create a pseudo power curve for various levels of lift
@@ -952,6 +958,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'                      end_fake_post_period="2015-12-15",
 #'                      prior_level_sd=0.002, 
 #'                      max_fake_lift=0.1)
+#' }
 #' @usage
 #' test_fake_lift(matched_markets=NULL,
 #'           test_market=NULL,
@@ -1152,6 +1159,7 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
 #'
 #' @export roll_up_optimal_pairs
 #' @examples
+#' \dontrun{
 #' ##-----------------------------------------------------------------------
 #' ## Generate the suggested test/control pairs
 #' ##-----------------------------------------------------------------------
@@ -1186,7 +1194,7 @@ test_fake_lift <- function(matched_markets=NULL, test_market=NULL, end_fake_post
 #'                      end_fake_post_period="2015-12-15",
 #'                      prior_level_sd=0.002, 
 #'                      max_fake_lift=0.1)
-#'
+#' }
 #' @usage
 #' roll_up_optimal_pairs(matched_markets=NULL,
 #'                       percent_cutoff=1,

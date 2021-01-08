@@ -78,6 +78,7 @@ using dynamic time warping (\code{dtw} package). The algorithm simply loops thro
 market in a parallel fashion, and then ranks by distance and/or correlation.
 }
 \examples{
+\dontrun{
 ##-----------------------------------------------------------------------
 ## Find the best matches for the CPH airport time series
 ##-----------------------------------------------------------------------
@@ -92,5 +93,6 @@ mm <- best_matches(data=weather,
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")
 head(mm$BestMatches)
+}
 
 }

@@ -412,5 +412,4 @@ Statistics (2015).
 \[2\] The vignette for the `dtw` package (browseVignettes(“dtw”))
 
 \[3\] Predicting the Present with Bayesian Structural Time Series,
-Steven L. Scott and Hal Varian,
-<a href="http://people.ischool.berkeley.edu/~hal/Papers/2013/pred-present-with-bsts.pdf" class="uri">http://people.ischool.berkeley.edu/~hal/Papers/2013/pred-present-with-bsts.pdf</a>.
+Steven L. Scott and Hal Varian

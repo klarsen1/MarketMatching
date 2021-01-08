@@ -32,6 +32,7 @@ following elements:
 You run this function and then pass the result (a matched markets object) to test_fake_lift.
 }
 \examples{
+\dontrun{
 ##-----------------------------------------------------------------------
 ## Generate the suggested test/control pairs
 ##-----------------------------------------------------------------------
@@ -66,5 +67,5 @@ results <- test_fake_lift(matched_markets=rollup,
                      end_fake_post_period="2015-12-15",
                      prior_level_sd=0.002, 
                      max_fake_lift=0.1)
-
+}
 }

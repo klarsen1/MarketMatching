@@ -41,6 +41,7 @@
 #'
 #' @name MarketMatching
 #' @examples
+#' \dontrun{
 #' 
 #' ##-----------------------------------------------------------------------
 #' ## Find best matches for CPH
@@ -130,5 +131,5 @@
 #'                                        end_fake_post_period = "2015-10-01",
 #'                                        lift_pattern_type = "constant",
 #'                                        max_fake_lift = 0.1)
-
+#' }
 NULL

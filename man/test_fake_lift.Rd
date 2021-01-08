@@ -55,6 +55,7 @@ following elements:
 The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 }
 \examples{
+\dontrun{
 library(MarketMatching)
 ##-----------------------------------------------------------------------
 ## Create a pseudo power curve for various levels of lift
@@ -80,4 +81,5 @@ results <- test_fake_lift(matched_markets=mm,
                      end_fake_post_period="2015-12-15",
                      prior_level_sd=0.002, 
                      max_fake_lift=0.1)
+}
 }

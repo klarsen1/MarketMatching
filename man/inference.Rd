@@ -73,6 +73,7 @@ The width of the interval is determined by the \code{alpha} parameter.}
 The function returns an object of type "market_inference" which contains the estimated impact of the intervention (absolute and relative).
 }
 \examples{
+\dontrun{
 library(MarketMatching)
 ##-----------------------------------------------------------------------
 ## Analyze causal impact of a made-up weather intervention in Copenhagen
@@ -98,4 +99,5 @@ results <- inference(matched_markets=mm,
                      control_matches=5, # use all 5 matches for inference
                      end_post_period="2015-12-15",
                      prior_level_sd=0.002)
+}
 }

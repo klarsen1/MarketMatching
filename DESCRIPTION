@@ -22,6 +22,7 @@ Imports:
    zoo,
    bsts,
    scales,
+   Boom,
    utf8,
    dtw
 LazyData: true
