@@ -544,6 +544,9 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     dplyr::filter(shortest_distances, Skip==FALSE) %>%
     dplyr::select(-Skip)
   
+  ### Save reduced data
+  saved_data <- saved_data %>% dplyr::filter(id_var %in% (shortest_distances$ID) | id_var %in% (shortest_distances$BestControl))
+  
   object <- list(BestMatches=shortest_distances, Data=as.data.frame(saved_data), MarketID=id_variable, MatchingMetric=matching_variable, DateVariable=date_variable, SuggestedTestControlSplits=suggested_split, Bins=Sizes)
   class(object) <- "matched_market"
   return (object)
