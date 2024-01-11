@@ -1,18 +1,16 @@
-Release summary
-===============
+# Release summary
 
-The current version is 1.1.4.
+The current version is 1.2.1.
 
-Test environments
-=================
+# Test environments
 
--   Local OS X install, R 3.5.2, using devtools::check()
+-   Local OS X install, R 4.3.2, using devtools::check()
 
--   devtools::check\_win\_devel()
+-   devtools::check_win_devel()
 
--   devtools::check\_rhub()
+-   devtools::check_rhub(env_vars=c(R_COMPILE_AND_INSTALL_PACKAGES =
+    “always”))
 
-R CMD check results
-===================
+# R CMD check results
 
 0 errors \| 0 warnings \| 0 notes

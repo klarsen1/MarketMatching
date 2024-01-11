@@ -63,7 +63,11 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
     sum_cntl <- NA
     dist <- 0
     # If insufficient data or no variance
-    if ((stats::var(test)==0 | length(test)<=2*warping_limit+1) | sum(abs(test))==0){
+    buffer <- 0.5
+    if (dtw_emphasis>0){
+      buffer <- warping_limit
+    }
+    if ((stats::var(test)==0 | length(test)<=2*buffer+1) | sum(abs(test))==0){
       isValidTest <- FALSE
       messages <- messages + 1
     }
@@ -89,7 +93,7 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
       distances[row, "SUMTEST"] <- sum_test
       distances[row, "SUMCNTL"] <- sum_cntl
       distances[row, "RAWDIST"] <- rawdist
-      if (max(ref)>0 & max(test)>0){
+      if (max(ref)>0 & max(test)>0 & sd(logplus(test))>0 & sd(logplus(ref))>0){
          distances[row, "Correlation_of_logs"] <- cor(logplus(test), logplus(ref))
       } else{
          distances[row, "Correlation_of_logs"] <- -1000000000
@@ -118,8 +122,12 @@ calculate_distances <- function(markets_to_be_matched, data, id, i, warping_limi
   }
   
   if(messages > 0){
-    cat(paste0(messages, " markets were not matched with ", ThisMarket, " due to insufficient data or no variance."))
-    cat("\n")
+    cat(paste0(messages, " markets were not matched with ", ThisMarket, " due to insufficient data or no variance. \n"))
+    if (dtw_emphasis>0){
+      cat(paste0("Since dtw_emphasis>0, more than 2*warping_limit+1 records are required in the matching period to match a market. \n"))
+    } else{
+      cat(paste0("Note that More than 2 records are required in the matching period to match a market. \n"))
+    }
     cat("\n")
   }
   
@@ -253,6 +261,7 @@ dw <- function(y, yhat){
 #' @import dtw
 #' @import utf8
 #' @importFrom reshape2 melt
+#' @importFrom stats sd
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #'
 #' @export best_matches
@@ -331,16 +340,18 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 
   # Clean up the emphasis
   if (is.null(dtw_emphasis)){
-    dtw_emphasis<-1
+    dtw_emphasis<-0
   } else if (dtw_emphasis>1){
     dtw_emphasis<-1
   } else if(dtw_emphasis<0){
     dtw_emphasis<-0
   }
-
+  
   ## check the inputs
+  stopif(class(data[[date_variable]]) != "Date", TRUE, "ERROR: date_variable is not a Date. Try as.Date()")
+  data[[date_variable]] <- as.Date(data[[date_variable]]) ## trim the date variable
   check_inputs(data=data, id=id_variable, matching_variable=matching_variable, date_variable=date_variable)
-  data$date_var <- data[[date_variable]]
+  data$date_var <- data[[date_variable]] 
   data$id_var <- data[[id_variable]]
   data$match_var <- data[[matching_variable]]
   
@@ -445,8 +456,8 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
     bin_size <- floor(markets/bins)
 
     cat(paste0("\tOptimal test/control market splits will be generated, targeting ", bin_size, " markets in each bin. \n"))
-    cat("\n")
     if (dtw_emphasis>0){
+      cat("\n")
       cat("\tFYI: It is recommended to set dtw_emphasis to 0 when running optimal splits. \n")
       cat("\n")
     }
@@ -587,7 +598,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #'                    matching_variable="Mean_TemperatureF",
 #'                    parallel=FALSE,
 #'                    warping_limit=1, # warping limit=1
-#'                    dtw_emphasis=1, # rely only on dtw for pre-screening
+#'                    dtw_emphasis=0, # rely only on dtw for pre-screening
 #'                    matches=5, # request 5 matches
 #'                    start_match_period="2014-01-01",
 #'                    end_match_period="2014-10-01")
@@ -667,13 +678,14 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
   Residuals <- NULL
   Pointwise <- NULL
   
+  stopif(is.null(matched_markets), TRUE, "ERROR: Need to specify a matched market object")
+  stopif(is.null(test_market), TRUE, "ERROR: Need to specify a test market")
   stopif(length(test_market)>1, TRUE, "ERROR: inference() can only analyze one test market at a time. Call the function separately for each test market")
   
   ## Model settings
   if (!is.null(bsts_modelargs) & !is.null(nseasons)){
     cat("\tNOTE: You're passing arguments directly to bsts while also specifying nseasons \n")
     cat("\tNOTE: bsts_modelargs will overwrite nseasons \n")
-    cat("\n")
     cat("\n")
   }
   if (is.null(bsts_modelargs)){
@@ -687,7 +699,6 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
       analyze_betas <- FALSE
       cat("\tNOTE: analyze_betas turned off when bsts model arguments are passed directly \n")
       cat("\tConsider using the nseasons and prior_level_sd parameters instead \n")
-      cat("\n")
       cat("\n")
     }
   }
@@ -729,17 +740,20 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 
   ## print the settings
   cat("\t------------- Inputs -------------\n")
+  cat(paste0("\tMarket ID: ", matched_markets$MarketID, "\n"))
+  cat(paste0("\tDate Variable: ", matched_markets$DateVariable, "\n"))
+  cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
+  cat("\n")
   cat(paste0("\tTest Market: ", test_market, "\n"))
   for (i in 1:length(control_market)){
     cat(paste0("\tControl Market ", i, ": ", control_market[i], "\n"))
   }
-  cat(paste0("\tMarket ID: ", matched_markets$MarketID, "\n"))
-  cat(paste0("\tDate Variable: ", matched_markets$DateVariable, "\n"))
+  cat("\n")
   cat(paste0("\tMatching (pre) Period Start Date: ", MatchingStartDate, "\n"))
   cat(paste0("\tMatching (pre) Period End Date: ", MatchingEndDate, "\n"))
   cat(paste0("\tPost Period Start Date: ", post_period_start_date, "\n"))
   cat(paste0("\tPost Period End Date: ", post_period_end_date, "\n"))
-  cat(paste0("\tMatching Metric: ", matched_markets$MatchingMetric, "\n"))
+  cat("\n")
   cat(paste0("\tbsts parameters: \n"))
   modelparms <- names(bsts_modelargs)
   for (p in 1:length(bsts_modelargs)){
@@ -749,7 +763,6 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
     cat("\t  No seasonality component (controlled for by the matched markets) \n")
   }
   cat(paste0("\tPosterior Intervals Tail Area: ", 100*(1-alpha), "%\n"))
-  cat("\n")
   cat("\n")
 
   ## run the inference
@@ -811,7 +824,6 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
   }
   cat(paste0("\tDW: ", round(results[[9]], 2) , "\n"))
   cat("\n")
-  cat("\n")
 
   ymin <- min(min(impact$series$response), min(impact$series$point.pred.lower), min(ref), min(y))
   ymax <- max(max(impact$series$response), max(impact$series$point.pred.upper), max(ref), max(y))
@@ -860,7 +872,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
     results[[14]] <- ggplot(data=plotdf, aes(x=SD, y=value, colour=as.factor(variable))) + geom_line() +
       theme_bw() + theme(legend.title = element_blank()) +
       geom_vline(xintercept=as.numeric(prior_level_sd), linetype=2) + xlab("Local Level Prior SD") +
-      facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour=FALSE)
+      facet_grid(variable ~ ., scales="free") + ylab("") + guides(colour="none")
   }
   
   burn <- SuggestBurn(0.1, impact$model$bsts.model)
@@ -946,7 +958,7 @@ inference <- function(matched_markets=NULL, bsts_modelargs=NULL, test_market=NUL
 #'                    date_variable="Date",
 #'                    matching_variable="Mean_TemperatureF",
 #'                    warping_limit=1, # warping limit=1
-#'                    dtw_emphasis=1, # rely only on dtw for pre-screening
+#'                    dtw_emphasis=0, # rely only on dtw for pre-screening
 #'                    matches=5, # request 5 matches
 #'                    start_match_period="2014-01-01",
 #'                    end_match_period="2014-10-01")
@@ -1222,11 +1234,7 @@ roll_up_optimal_pairs <- function(matched_markets=NULL, percent_cutoff=1, synthe
   
   ###  check out the matched markets object
   stopif(is.null(matched_markets), TRUE, "The matched_markets object is null")
-  cat("\n")
-  
   stopif(class(matched_markets)=="matched_market", FALSE, "The matched_markets object is not of type matched_market")
-  cat("\n")
-  
   stopif(is.null(matched_markets$SuggestedTestControlSplits), TRUE, "The matched_markets object does not contain suggested pairs. Try re-running with the right settings")
   cat("\n")
   

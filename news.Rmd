@@ -7,7 +7,14 @@ output:
 
 Package: MarketMatching
 
-Version: 1.2.0
+Version: 1.2.1
+
+# MarketMacthing version 1.2.1
+- Rebuilt based on R version 4.3.2
+- Removed ggplot settings that created warnings
+- Wraps as.Date() around the date variable to truncate
+- Improved error and warning messaging
+
 
 # MarketMacthing version 1.2.0
 - This is a major release for CRAN.
@@ -15,9 +22,6 @@ Version: 1.2.0
   (a) Prospective pseudo power analysis by testing the design against fake interventions.
   (b) Generate optimal test/control market splits.
 
-
-# MarketMacthing version 1.1.4
-- Clean up bugs from 1.1.9
 
 # MarketMacthing version 1.1.4
 - Changed MAPE calculation to not re-scale the residuals.

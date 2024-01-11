@@ -6,11 +6,11 @@ output:
 
 # Release summary
 
-The current version is 1.2.0. 
+The current version is 1.2.1. 
 
 # Test environments
 
-* Local OS X install, R 3.5.2, using devtools::check()
+* Local OS X install, R 4.3.2, using devtools::check()
 
 * devtools::check_win_devel()
 

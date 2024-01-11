@@ -69,7 +69,7 @@ mm <- best_matches(data=weather,
                    date_variable="Date",
                    matching_variable="Mean_TemperatureF",
                    warping_limit=1, # warping limit=1
-                   dtw_emphasis=1, # rely only on dtw for pre-screening
+                   dtw_emphasis=0, # rely only on dtw for pre-screening
                    matches=5, # request 5 matches
                    start_match_period="2014-01-01",
                    end_match_period="2014-10-01")

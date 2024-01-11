@@ -28,6 +28,7 @@
 #' @author Kim Larsen (kblarsen4 at gmail.com)
 #' @keywords ts htest
 #' @docType package
+#' @aliases MarketMatching-package
 #' @description 
 #' For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention (prospective or historical).
 #' The intervention could be be a marketing event or some other local business tactic that is being tested. 
@@ -106,7 +107,7 @@
 #'                                   matching_variable="Mean_TemperatureF",
 #'                                   suggest_market_splits=TRUE,
 #'                                   parallel=FALSE,
-#'                                   dtw_emphasis=0, # rely only on correlation for this analysis
+#'                                   dtw_emphasis=1, # rely only on correlation for this analysis
 #'                                   start_match_period="2014-01-01",
 #'                                   end_match_period="2014-10-01")
 #'

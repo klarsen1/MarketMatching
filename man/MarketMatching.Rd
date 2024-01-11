@@ -3,6 +3,7 @@
 \docType{package}
 \name{MarketMatching}
 \alias{MarketMatching}
+\alias{MarketMatching-package}
 \title{Market Matching and Causal Impact Inference}
 \description{
 For a given test market find the best matching control markets using time series matching and analyze the impact of an intervention (prospective or historical).
@@ -106,7 +107,7 @@ mm <- MarketMatching::best_matches(data=weather,
                                   matching_variable="Mean_TemperatureF",
                                   suggest_market_splits=TRUE,
                                   parallel=FALSE,
-                                  dtw_emphasis=0, # rely only on correlation for this analysis
+                                  dtw_emphasis=1, # rely only on correlation for this analysis
                                   start_match_period="2014-01-01",
                                   end_match_period="2014-10-01")
 
