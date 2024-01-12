@@ -652,7 +652,7 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
 #' \item{\code{Coefficients}}{The average posterior coefficients}
 #' 
 #' @import zoo
-#' @importFrom bsts SuggestBurn
+#' @import bsts
 #' @importFrom scales comma
 #' @import Boom
 
