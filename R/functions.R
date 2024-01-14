@@ -352,10 +352,12 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   if (length(class(data[[date_variable]]))>1){
     if (!("Date" %in% class(data[[date_variable]]))){
       cat("NOTE: Date variable converted to Date using as.Date() \n")
+      cat("Recommended to double check your date variable \n")
       cat("\n")
     }
   } else if (class(data[[date_variable]]) != "Date"){
     cat("NOTE: Date variable converted to Date using as.Date() \n")
+    cat("Recommended to double check your date variable \n")
     cat("\n")
   }
     
