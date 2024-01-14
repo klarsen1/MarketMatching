@@ -179,7 +179,7 @@ check_inputs <- function(data=NULL, id=NULL, matching_variable=NULL, date_variab
   stopif(TRUE %in% is.null(data[[id]]), TRUE, "ERROR: NULLs found in the market column")
   stopif('' %in% unique(data[[id]]), TRUE, "ERROR: Blanks found in the market column")
   stopif(TRUE %in% is.na(data[[matching_variable]]), TRUE, "ERROR: NAs found in the matching variable")
-  stopif(class(data[[date_variable]]) != "Date", TRUE, "ERROR: date_variable is not a Date. Check your data frame.")
+  stopif(class(data[[date_variable]]) == "Date", FALSE, "ERROR: date_variable is not a Date. Check your data frame or use as.Date().")
 }
 
 #' @importFrom reshape2 melt dcast
@@ -348,7 +348,17 @@ best_matches <- function(data=NULL, markets_to_be_matched=NULL, id_variable=NULL
   }
   
   ## check the inputs
-  stopif(class(data[[date_variable]]) != "Date", TRUE, "ERROR: date_variable is not a Date. Try as.Date()")
+  stopif(date_variable %in% names(data), FALSE, "ERROR: date variable not found in input data")
+  if (length(class(data[[date_variable]]))>1){
+    if (!("Date" %in% class(data[[date_variable]]))){
+      cat("NOTE: Date variable converted to Date using as.Date() \n")
+      cat("\n")
+    }
+  } else if (class(data[[date_variable]]) != "Date"){
+    cat("NOTE: Date variable converted to Date using as.Date() \n")
+    cat("\n")
+  }
+    
   data[[date_variable]] <- as.Date(data[[date_variable]]) ## trim the date variable
   check_inputs(data=data, id=id_variable, matching_variable=matching_variable, date_variable=date_variable)
   data$date_var <- data[[date_variable]] 
